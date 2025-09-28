@@ -1,50 +1,27 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\AuthController;
 
-Route::get('/', function () {
-    return view('index');
-})->name('home');
+// CLIENT ROUTES
+Route::get('/', fn() => view('client.index'))->name('home');
+Route::get('/login', fn() => view('auth.login'))->name('login');
+Route::get('/register', fn() => view('auth.register'))->name('register');
+Route::get('/about', fn() => view('client.about'))->name('about');
+Route::get('/contact', fn() => view('client.contact'))->name('contact');
+Route::get('/donation', fn() => view('client.donation'))->name('donation');
+Route::get('/event', fn() => view('client.event'))->name('event');
+Route::get('/feature', fn() => view('client.feature'))->name('feature');
+Route::get('/service', fn() => view('client.service'))->name('service');
+Route::get('/team', fn() => view('client.team'))->name('team');
+Route::get('/testimonial', fn() => view('client.testimonial'))->name('testimonial');
 
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
 
-Route::get('/register', function () {
-    return view('auth.register');
-})->name('register');
+Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
+Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-Route::get('/about', function () {
-    return view('about');
-})->name('about');
 
-Route::get('/contact', function () {
-    return view('contact');
-})->name('contact');
-
-Route::get('/donation', function () {
-    return view('donation');
-})->name('donation');
-
-Route::get('/event', function () {
-    return view('event');
-})->name('event');
-
-Route::get('/feature', function () {
-    return view('feature');
-})->name('feature');
-
-Route::get('/service', function () {
-    return view('service');
-})->name('service');
-
-Route::get('/team', function () {
-    return view('team');
-})->name('team');
-
-Route::get('/testimonial', function () {
-    return view('testimonial');
-})->name('testimonial');
-
-Route::resource('users', UserController::class);
+Route::get('/admin', function () {
+    return view('admin.dashboard');
+})->middleware(['auth'])->name('admin.dashboard');

@@ -10,49 +10,64 @@
     <div class="register-container">
         <div class="register">
             <h2>Create Account</h2>
-            <form action="/register" method="POST">
+            <form action="{{ route('register.submit') }}" method="POST">
                 @csrf
+
                 <div class="inputBox">
-                    <input type="text" name="name" required="required">
-                    <span>Full Name</span>
+                    <input type="text" name="first_name" required="required">
+                    <span>First Name</span>
                     <i class="fas fa-user"></i>
                 </div>
+
+                <div class="inputBox">
+                    <input type="text" name="last_name" required="required">
+                    <span>Last Name</span>
+                    <i class="fas fa-user"></i>
+                </div>
+
                 <div class="inputBox">
                     <input type="email" name="email" required="required">
                     <span>Email Address</span>
                     <i class="fas fa-envelope"></i>
                 </div>
+
                 <div class="inputBox">
-                    <input type="tel" name="phone" required="required">
+                    <input type="tel" name="phone">
                     <span>Phone Number</span>
                     <i class="fas fa-phone"></i>
                 </div>
+
                 <div class="inputBox">
                     <input type="password" name="password" required="required" id="password">
                     <span>Password</span>
                     <i class="fas fa-lock"></i>
                     <i class="fas fa-eye toggle-password" id="togglePassword"></i>
                 </div>
+
                 <div class="inputBox">
                     <input type="password" name="password_confirmation" required="required" id="confirmPassword">
                     <span>Confirm Password</span>
                     <i class="fas fa-lock"></i>
                     <i class="fas fa-eye toggle-password" id="toggleConfirmPassword"></i>
                 </div>
+
                 <div class="terms">
                     <label>
                         <input type="checkbox" name="terms" required>
                         I agree to the <a href="#">Terms & Conditions</a>
                     </label>
                 </div>
+
                 <input type="submit" value="Register">
+
                 <div class="links">
-                    <p>Already have an account? <a href="/">Login</a></p>
+                    <p>Already have an account? <a href="{{ route('login') }}">Login</a></p>
                 </div>
             </form>
         </div>
     </div>
 </body>
+
 <style>
 * {
     margin: 0;
