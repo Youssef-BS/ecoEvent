@@ -6,7 +6,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="shortcut icon" href="images/favicon.svg" type="x-icon" />
-  <title>PlainAdmin Demo | Bootstrap 5 Admin Template</title>
+  <title>Eco Event</title>
 
   <!-- ========== All CSS files linkup ========= -->
   <link rel="stylesheet" href="css/bootstrap.min.css" />
@@ -51,11 +51,7 @@
             </span>
             <span class="text">Dashboard</span>
           </a>
-          <ul id="ddmenu_1" class="collapse show dropdown-nav">
-            <li>
-              <a href="index.html" class="active"> eCommerce </a>
-            </li>
-          </ul>
+
         </li>
         <li class="nav-item nav-item-has-children">
           <a
@@ -421,30 +417,40 @@
                   <div class="profile-info">
                     <div class="info">
                       <div class="image">
-                        <img src="images/profile/profile-image.png" alt="" />
+                        <img src="{{ Auth::check() && Auth::user()->image 
+             ? asset('storage/' . Auth::user()->image) 
+             : asset('images/profile/profile-image.png') }}"
+                          alt="Profile Image">
                       </div>
                       <div>
-                        <h6 class="fw-500">Adam Joe</h6>
-                        <p>Admin</p>
+                        <h6 class="fw-500">
+                          {{ Auth::check() ? Auth::user()->first_name . ' ' . Auth::user()->last_name : 'Guest' }}
+                        </h6>
+                        <p>{{ Auth::check() ? (Auth::user()->role ?? 'User') : '' }}</p>
                       </div>
                     </div>
                   </div>
                 </button>
+
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profile">
                   <li>
                     <div class="author-info flex items-center !p-1">
                       <div class="image">
-                        <img src="images/profile/profile-image.png" alt="image">
+                        <img src="{{ Auth::check() && Auth::user()->photo 
+             ? asset('storage/' . Auth::user()->photo) 
+             : asset('images/profile/profile-image.png') }}"
+                          alt=" img">
+
                       </div>
                       <div class="content">
-                        <h4 class="text-sm">Adam Joe</h4>
-                        <a class="text-black/40 dark:text-white/40 hover:text-black dark:hover:text-white text-xs" href="#">Email@gmail.com</a>
+                        <h4 class="text-sm">{{ Auth::check() ? Auth::user()->first_name . ' ' . Auth::user()->last_name : 'Guest' }}</h4>
+
                       </div>
                     </div>
                   </li>
                   <li class="divider"></li>
                   <li>
-                    <a href="#0">
+                    <a href="{{ route('profile.show') }}">
                       <i class="lni lni-user"></i> View Profile
                     </a>
                   </li>
@@ -461,10 +467,16 @@
                   </li>
                   <li class="divider"></li>
                   <li>
-                    <a href="#0"> <i class="lni lni-exit"></i> Sign Out </a>
+                    <form method="POST" action="{{ route('logout') }}">
+                      @csrf
+                      <button type="submit" class="dropdown-item">
+                        <i class="lni lni-exit"></i> Sign Out
+                      </button>
+                    </form>
                   </li>
                 </ul>
               </div>
+
               <!-- profile end -->
             </div>
           </div>

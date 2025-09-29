@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SponsorController;
+use App\Http\Controllers\UserController;
 
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
@@ -23,7 +24,9 @@ Route::get('/testimonial', fn() => view('client.testimonial'))->name('testimonia
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-
+Route::get('/profile', [UserController::class, 'showProfile'])
+    ->middleware('auth')
+    ->name('profile.show');
 
 Route::get('/admin', function () {
     return view('admin.dashboard');

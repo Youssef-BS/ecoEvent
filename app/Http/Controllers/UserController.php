@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\User;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
@@ -12,8 +14,8 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::all() ;
-        return view('users.index' , compact('users')) ;
+        $users = User::all();
+        return view('users.index', compact('users'));
     }
 
     /**
@@ -21,7 +23,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('users.create') ;
+        return view('users.create');
     }
 
     /**
@@ -44,11 +46,12 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function showProfile()
     {
-        //
+        /** @var User $user */
+        $user = Auth::user();
+        return view('users.profile', compact('user'));
     }
-
     /**
      * Show the form for editing the specified resource.
      */
