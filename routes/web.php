@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SponsorController;
 
 // CLIENT ROUTES
 Route::get('/', fn() => view('client.index'))->name('home');
@@ -25,3 +26,15 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/admin', function () {
     return view('admin.dashboard');
 })->middleware(['auth'])->name('admin.dashboard');
+
+
+/**************************sponsor */
+
+Route::get('/sponsors', [SponsorController::class, 'index'])->name('sponsors.ListeSponsor');
+
+Route::post('/sponsors', [SponsorController::class, 'store'])->name('sponsors.store');
+Route::get('/sponsors/create', [SponsorController::class, 'create'])->name('sponsors.create');
+Route::get('/sponsors/{sponsor}', [SponsorController::class, 'show'])->name('sponsors.show');
+Route::get('/sponsors/{sponsor}/edit', [SponsorController::class, 'edit'])->name('sponsors.edit');
+Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('sponsors.update');
+Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
