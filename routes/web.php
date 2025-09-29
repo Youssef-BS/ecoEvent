@@ -29,10 +29,12 @@ Route::get('/admin', function () {
 
 
 /**************************sponsor */
-
 Route::get('/sponsors', [SponsorController::class, 'index'])->name('sponsors.ListeSponsor');
 
+
 Route::post('/sponsors', [SponsorController::class, 'store'])->name('sponsors.store');
+
+
 Route::get('/sponsors/create', [SponsorController::class, 'create'])->name('sponsors.create');
 Route::get('/sponsors/{sponsor}', [SponsorController::class, 'show'])->name('sponsors.show');
 Route::get('/sponsors/{sponsor}/edit', [SponsorController::class, 'edit'])->name('sponsors.edit');
