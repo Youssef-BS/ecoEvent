@@ -45,20 +45,18 @@
                             {{ $sponsor->email }}
                         </a>
                     </td>
-
                     <td class="text-center">
                         <div class="btn-group btn-group-sm" role="group" aria-label="Sponsor Actions">
-                            <a href="{{ route('sponsors.show', $sponsor->id) }}" class="btn btn-link text-primary p-1" title="Voir les détails">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z" />
-                                    <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z" />
+
+                            <a href="{{ route('sponsors.show', $sponsor->id) }}" class="btn btn-link text-success" title="Voir les détails">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="1em" width="1em" fill="currentColor" viewBox="0 0 640 640">
+                                    <path d="M320 96C239.2 96 174.5 132.8 127.4 176.6C80.6 220.1 49.3 272 34.4 307.7C31.1 315.6 31.1 324.4 34.4 332.3C49.3 368 80.6 420 127.4 463.4C174.5 507.1 239.2 544 320 544C400.8 544 465.5 507.2 512.6 463.4C559.4 419.9 590.7 368 605.6 332.3C608.9 324.4 608.9 315.6 605.6 307.7C590.7 272 559.4 220 512.6 176.6C465.5 132.9 400.8 96 320 96zM176 320C176 240.5 240.5 176 320 176C399.5 176 464 240.5 464 320C464 399.5 399.5 464 320 464C240.5 464 176 399.5 176 320zM320 256C320 291.3 291.3 320 256 320C244.5 320 233.7 317 224.3 311.6C223.3 322.5 224.2 333.7 227.2 344.8C240.9 396 293.6 426.4 344.8 412.7C396 399 426.4 346.3 412.7 295.1C400.5 249.4 357.2 220.3 311.6 224.3C316.9 233.6 320 244.4 320 256z" />
                                 </svg>
                             </a>
 
-
-                            <a href="{{ route('sponsors.edit', $sponsor->id) }}" class="btn btn-link text-warning p-1" title="Modifier">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z" />
+                            <a href="{{ route('sponsors.edit', $sponsor->id) }}" class="btn btn-link text-warning" title="Modifier">
+                                <svg xmlns="http://www.w3.org/2000/svg" height="1em" width="1em" fill="currentColor" viewBox="0 0 512 512">
+                                    <path d="M495.2 27.6c-18.7-18.7-49-18.7-67.7 0l-12.8 12.8L477.6 122.3l12.8-12.8c18.7-18.7 18.7-49 0-67.7l-12.8-12.8zm-155.6 156.4L188.7 334.9c-7.9 7.9-12.2 18.4-12.2 29.5L176.8 456l-98 19.6c-10.7 2.1-21.7-1.1-29.8-9.1s-11.2-18.8-9.1-29.8l19.6-98c.1-4.7 1-9.3 2.6-13.6c1.6-4.3 3.9-8.4 6.8-12.2L312.3 84.8c18.7-18.7 49-18.7 67.7 0s18.7 49 0 67.7L339.6 200.2zM216 480H40c-22.1 0-40-17.9-40-40V176c0-22.1 17.9-40 40-40h128c11 0 20-9 20-20s-9-20-20-20H40c-44.2 0-80 35.8-80 80V440c0 44.2 35.8 80 80 80h176c11 0 20-9 20-20s-9-20-20-20z" />
                                 </svg>
                             </a>
 
@@ -67,9 +65,8 @@
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-link text-danger" title="Supprimer">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                        <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
-                                        <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" width="1em" fill="currentColor" viewBox="0 0 448 512">
+                                        <path d="M135.2 17.7L128 32H32C14.3 32 0 46.3 0 64S14.3 96 32 96H416c17.7 0 32-14.3 32-32s-14.3-32-32-32H320l-7.2-14.3C307.4 6.8 296.3 0 284.2 0H163.8c-12.1 0-23.2 6.8-28.6 17.7zM416 128H32L53.2 467c1.6 30.9 27.2 53 58.6 53H336.2c31.3 0 57-22.1 58.6-53L416 128z" />
                                     </svg>
                                 </button>
                             </form>
@@ -86,6 +83,3 @@
         </table>
     </div>
 </div>
-
-<!-- Bootstrap Icons CDN -->
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"> -->

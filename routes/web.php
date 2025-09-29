@@ -4,8 +4,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SponsorController;
 
-// CLIENT ROUTES
-Route::get('/', fn() => view('client.index'))->name('home');
+// // CLIENT ROUTES
+// Route::get('/', fn() => view('client.index'))->name('home');
+Route::get('/', [SponsorController::class, 'home'])->name('home');
+
 Route::get('/login', fn() => view('auth.login'))->name('login');
 Route::get('/register', fn() => view('auth.register'))->name('register');
 Route::get('/about', fn() => view('client.about'))->name('about');

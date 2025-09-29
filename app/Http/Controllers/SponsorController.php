@@ -13,7 +13,11 @@ class SponsorController extends Controller
         $sponsors = Sponsor::all();
         return view('sponsors.ListeSponsor', compact('sponsors'));
     }
-
+   public function home()
+    {
+        $sponsors = Sponsor::all();
+        return view('client.index', compact('sponsors'));
+    }
     public function create()
     {
         return view('sponsors.create');
