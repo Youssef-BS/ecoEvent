@@ -70,9 +70,12 @@ class AuthController extends Controller
         throw ValidationException::withMessages([
             'email' => __('Les informations de connexion sont incorrectes.'),
         ]);
+
     }
 
 
+
+}
     public function logout(Request $request)
     {
         Auth::logout();
