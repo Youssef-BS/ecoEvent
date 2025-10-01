@@ -63,8 +63,9 @@ class AuthController extends Controller
                 $redirectTo = '/';
             }
 
+        // Prefer named routes for clarity and resilience
+        $redirectTo = $user->role === 'admin' ? route('admin.dashboard') : route('home');
             return redirect()->intended($redirectTo)->with('success', 'Connexion réussie !');
-        }
 
         throw ValidationException::withMessages([
             'email' => __('Les informations de connexion sont incorrectes.'),

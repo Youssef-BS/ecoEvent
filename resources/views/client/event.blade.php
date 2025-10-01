@@ -30,6 +30,77 @@
 
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
+    <style>
+        /* Floating card effect */
+        .event-card {
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+            will-change: transform;
+        }
+
+        .event-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12) !important;
+            border-color: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .event-card .position-relative img {
+            transition: transform .35s ease;
+        }
+
+        .event-card:hover .position-relative img {
+            transform: scale(1.03);
+        }
+
+        /* Two-button pagination styling */
+        .pagination .page-item .page-link {
+            border-radius: .75rem;
+            padding: .6rem 1rem;
+            border: 2px solid #0d1b2a26;
+            /* subtle */
+            color: #0d1b2a;
+            background: #fff;
+            box-shadow: 0 1px 0 rgba(13, 27, 42, .04);
+        }
+
+        .pagination .page-item .page-link:hover {
+            background: #f8f9fb;
+            border-color: #0d1b2a3a;
+            text-decoration: none;
+        }
+
+        .pagination .page-item.active .page-link,
+        .pagination .page-item.disabled .page-link {
+            border-color: #0d1b2a3a;
+        }
+
+        /* Prominent price badge */
+        .price-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 3;
+            border-radius: 999px;
+            padding: .4rem .85rem;
+            font-weight: 700;
+            font-size: .92rem;
+            color: #0d1b2a;
+            /* dark for contrast on light badge */
+            letter-spacing: .2px;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(13, 27, 42, .15);
+            background: #CBDF72;
+            /* requested color */
+            user-select: none;
+        }
+
+        .price-badge.is-free {
+            background: #CBDF72;
+        }
+
+        .price-badge.is-paid {
+            background: #CBDF72;
+        }
+    </style>
 </head>
 
 <body>
@@ -42,12 +113,12 @@
 
 
     <!-- Topbar Start -->
-@include('client.layouts.navbar')
+    @include('client.layouts.navbar')
     <!-- Topbar End -->
 
 
     <!-- Navbar Start -->
-   
+
     <!-- Navbar End -->
 
 
@@ -120,85 +191,58 @@
                 <p class="section-title bg-white text-center text-primary px-3">Events</p>
                 <h1 class="display-6 mb-4">Be a Part of a Global Movement</h1>
             </div>
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
-                    <div class="event-item h-100 p-4">
-                        <img class="img-fluid w-100 mb-4" src="img/event-1.jpg" alt="">
-                        <a href="#!" class="h3 d-inline-block">Education Program</a>
-                        <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
-                        <div class="bg-light p-4">
-                            <p class="mb-1"><i class="fa fa-clock text-primary me-2"></i>10:00 AM - 18:00 PM</p>
-                            <p class="mb-1"><i class="fa fa-calendar-alt text-primary me-2"></i>Jan 01 - Jan 10</p>
-                            <p class="mb-0"><i class="fa fa-map-marker-alt text-primary me-2"></i>123 Street, New York,
-                                USA</p>
-                        </div>
-                    </div>
+            @auth
+                <div class="d-flex justify-content-end mb-3">
+                    <a href="{{ route('events.create') }}" class="btn btn-primary py-2 px-4">Create Event</a>
                 </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.3s">
-                    <div class="event-item h-100 p-4">
-                        <img class="img-fluid w-100 mb-4" src="img/event-2.jpg" alt="">
-                        <a href="#!" class="h3 d-inline-block">Awareness Program</a>
-                        <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
-                        <div class="bg-light p-4">
-                            <p class="mb-1"><i class="fa fa-clock text-primary me-2"></i>10:00 AM - 18:00 PM</p>
-                            <p class="mb-1"><i class="fa fa-calendar-alt text-primary me-2"></i>Jan 01 - Jan 10</p>
-                            <p class="mb-0"><i class="fa fa-map-marker-alt text-primary me-2"></i>123 Street, New York,
-                                USA</p>
+            @endauth
+            <div id="events-grid">
+                <div class="row g-4">
+                    @foreach ($events ?? [] as $event)
+                        <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
+                            <div
+                                class="event-item event-card position-relative h-100 p-4 border rounded-3 shadow-sm bg-white">
+                                @php
+                                    $price = is_null($event->price) ? 0 : (int) $event->price;
+                                    $priceText =
+                                        $price > 0
+                                            ? 'It starts with ' . number_format($price, 0, ',', ' ') . ' DT'
+                                            : 'Free';
+                                @endphp
+                                <div class="price-badge {{ $price > 0 ? 'is-paid' : 'is-free' }}">{{ $priceText }}
+                                </div>
+                                @if ($event->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($event->image))
+                                    <div class="position-relative mb-4">
+                                        <img class="img-fluid w-100"
+                                            src="{{ \Illuminate\Support\Facades\Storage::url($event->image) }}"
+                                            alt="{{ $event->title }}">
+                                    </div>
+                                @endif
+                                <a href="{{ route('events.show', $event) }}"
+                                    class="h3 d-inline-block text-break">{{ $event->title }}</a>
+                                <p class="text-break mb-3"
+                                    style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+                                    {{ \Illuminate\Support\Str::limit(strip_tags($event->description), 220) }}</p>
+                                <div class="bg-light p-4">
+                                    <p class="mb-1"><i
+                                            class="fa fa-clock text-primary me-2"></i>{{ optional($event->date)->format('h:i A') }}
+                                    </p>
+                                    <p class="mb-1"><i
+                                            class="fa fa-calendar-alt text-primary me-2"></i>{{ optional($event->date)->format('M d, Y') }}
+                                    </p>
+                                    <p class="mb-0"><i
+                                            class="fa fa-map-marker-alt text-primary me-2"></i>{{ $event->location ?? '—' }}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    @endforeach
                 </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.5s">
-                    <div class="event-item h-100 p-4">
-                        <img class="img-fluid w-100 mb-4" src="img/event-3.jpg" alt="">
-                        <a href="#!" class="h3 d-inline-block">Health Care Program</a>
-                        <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
-                        <div class="bg-light p-4">
-                            <p class="mb-1"><i class="fa fa-clock text-primary me-2"></i>10:00 AM - 18:00 PM</p>
-                            <p class="mb-1"><i class="fa fa-calendar-alt text-primary me-2"></i>Jan 01 - Jan 10</p>
-                            <p class="mb-0"><i class="fa fa-map-marker-alt text-primary me-2"></i>123 Street, New York,
-                                USA</p>
-                        </div>
+                @if (($events ?? null) instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                    <div class="d-flex justify-content-center mt-4">
+                        {{ $events->onEachSide(2)->links('pagination::bootstrap-5') }}
                     </div>
-                </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
-                    <div class="event-item h-100 p-4">
-                        <img class="img-fluid w-100 mb-4" src="img/event-1.jpg" alt="">
-                        <a href="#!" class="h3 d-inline-block">Education Program</a>
-                        <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
-                        <div class="bg-light p-4">
-                            <p class="mb-1"><i class="fa fa-clock text-primary me-2"></i>10:00 AM - 18:00 PM</p>
-                            <p class="mb-1"><i class="fa fa-calendar-alt text-primary me-2"></i>Jan 01 - Jan 10</p>
-                            <p class="mb-0"><i class="fa fa-map-marker-alt text-primary me-2"></i>123 Street, New York,
-                                USA</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.3s">
-                    <div class="event-item h-100 p-4">
-                        <img class="img-fluid w-100 mb-4" src="img/event-2.jpg" alt="">
-                        <a href="#!" class="h3 d-inline-block">Awareness Program</a>
-                        <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
-                        <div class="bg-light p-4">
-                            <p class="mb-1"><i class="fa fa-clock text-primary me-2"></i>10:00 AM - 18:00 PM</p>
-                            <p class="mb-1"><i class="fa fa-calendar-alt text-primary me-2"></i>Jan 01 - Jan 10</p>
-                            <p class="mb-0"><i class="fa fa-map-marker-alt text-primary me-2"></i>123 Street, New York,
-                                USA</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.5s">
-                    <div class="event-item h-100 p-4">
-                        <img class="img-fluid w-100 mb-4" src="img/event-3.jpg" alt="">
-                        <a href="#!" class="h3 d-inline-block">Health Care Program</a>
-                        <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
-                        <div class="bg-light p-4">
-                            <p class="mb-1"><i class="fa fa-clock text-primary me-2"></i>10:00 AM - 18:00 PM</p>
-                            <p class="mb-1"><i class="fa fa-calendar-alt text-primary me-2"></i>Jan 01 - Jan 10</p>
-                            <p class="mb-0"><i class="fa fa-map-marker-alt text-primary me-2"></i>123 Street, New York,
-                                USA</p>
-                        </div>
-                    </div>
-                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -213,7 +257,8 @@
                     <div class="col-lg-8 py-5 text-center">
                         <h1 class="display-6 wow fadeIn" data-wow-delay="0.3s">Our Door Are Always Open to More People
                             Who Want to Support Each Others!</h1>
-                        <p class="fs-5 mb-4 wow fadeIn" data-wow-delay="0.5s">Through your donations and volunteer work,
+                        <p class="fs-5 mb-4 wow fadeIn" data-wow-delay="0.5s">Through your donations and volunteer
+                            work,
                             we spread kindness and support to children, families, and communities struggling to find
                             stability.</p>
                         <div class="d-flex justify-content-center wow fadeIn" data-wow-delay="0.7s">
@@ -235,8 +280,8 @@
                 <div class="col-lg-7 text-center wow fadeIn" data-wow-delay="0.5s">
                     <h1 class="display-6 mb-4">Subscribe the Newsletter</h1>
                     <div class="position-relative w-100 mb-2">
-                        <input class="form-control border-0 w-100 ps-4 pe-5" type="text" placeholder="Enter Your Email"
-                            style="height: 60px;">
+                        <input class="form-control border-0 w-100 ps-4 pe-5" type="text"
+                            placeholder="Enter Your Email" style="height: 60px;">
                         <button type="button"
                             class="btn btn-lg-square shadow-none position-absolute top-0 end-0 mt-2 me-2"><i
                                 class="fa fa-paper-plane text-primary fs-4"></i></button>
@@ -259,10 +304,13 @@
                     <p class="mb-2"><i class="fa fa-phone-alt me-3"></i>+012 345 67890</p>
                     <p class="mb-2"><i class="fa fa-envelope me-3"></i>info@example.com</p>
                     <div class="d-flex pt-3">
-                        <a class="btn btn-square btn-primary me-2" href="#!"><i class="fab fa-x-twitter"></i></a>
-                        <a class="btn btn-square btn-primary me-2" href="#!"><i class="fab fa-facebook-f"></i></a>
+                        <a class="btn btn-square btn-primary me-2" href="#!"><i
+                                class="fab fa-x-twitter"></i></a>
+                        <a class="btn btn-square btn-primary me-2" href="#!"><i
+                                class="fab fa-facebook-f"></i></a>
                         <a class="btn btn-square btn-primary me-2" href="#!"><i class="fab fa-youtube"></i></a>
-                        <a class="btn btn-square btn-primary me-2" href="#!"><i class="fab fa-linkedin-in"></i></a>
+                        <a class="btn btn-square btn-primary me-2" href="#!"><i
+                                class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -315,7 +363,8 @@
                         <!--/*** This template is free as long as you keep the below author’s credit link/attribution link/backlink. ***/-->
                         <!--/*** If you'd like to use the template without the below author’s credit link/attribution link/backlink, ***/-->
                         <!--/*** you can purchase the Credit Removal License from "https://htmlcodex.com/credit-removal". ***/-->
-                        Designed By <a class="fw-semi-bold" href="https://htmlcodex.com">HTML Codex</a>. Distributed by
+                        Designed By <a class="fw-semi-bold" href="https://htmlcodex.com">HTML Codex</a>. Distributed
+                        by
                         <a class="fw-semi-bold" href="https://themewagon.com">ThemeWagon</a>
                     </div>
                 </div>
@@ -340,6 +389,56 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
+    <script>
+        // AJAX pagination: replace only the events grid, not the whole page
+        function wireEventsPagination(root) {
+            const scope = root || document;
+            scope.querySelectorAll('.pagination a.page-link').forEach(a => {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const url = this.getAttribute('href');
+                    if (!url) return;
+                    fetch(url)
+                        .then(r => r.text())
+                        .then(html => {
+                            const tmp = document.createElement('div');
+                            tmp.innerHTML = html;
+                            const fresh = tmp.querySelector('#events-grid');
+                            const current = document.querySelector('#events-grid');
+                            if (fresh && current) {
+                                current.replaceWith(fresh);
+                                wireEventsPagination(fresh);
+                                window.history.pushState({}, '', url);
+                                fresh.scrollIntoView({
+                                    behavior: 'smooth',
+                                    block: 'start'
+                                });
+                            }
+                        })
+                        .catch(console.error);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => wireEventsPagination());
+
+        // Handle browser back/forward to keep the grid in sync
+        window.addEventListener('popstate', () => {
+            fetch(location.href)
+                .then(r => r.text())
+                .then(html => {
+                    const tmp = document.createElement('div');
+                    tmp.innerHTML = html;
+                    const fresh = tmp.querySelector('#events-grid');
+                    const current = document.querySelector('#events-grid');
+                    if (fresh && current) {
+                        current.replaceWith(fresh);
+                        wireEventsPagination(fresh);
+                    }
+                })
+                .catch(console.error);
+        });
+    </script>
 </body>
 
 </html>

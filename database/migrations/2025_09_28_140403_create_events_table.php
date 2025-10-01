@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('description');
             $table->string('categories');
+            $table->string('image')->nullable();
             $table->dateTime('date');
             $table->string('location')->nullable();
             $table->integer('price')->default(0);

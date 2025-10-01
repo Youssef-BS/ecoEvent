@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\UserController;
 
@@ -14,7 +15,8 @@ Route::get('/register', fn() => view('auth.register'))->name('register');
 Route::get('/about', fn() => view('client.about'))->name('about');
 Route::get('/contact', fn() => view('client.contact'))->name('contact');
 Route::get('/donation', fn() => view('client.donation'))->name('donation');
-Route::get('/event', fn() => view('client.event'))->name('event');
+// Events listing (dynamic)
+Route::get('/event', [EventController::class, 'index'])->name('event');
 Route::get('/feature', fn() => view('client.feature'))->name('feature');
 Route::get('/service', fn() => view('client.service'))->name('service');
 Route::get('/team', fn() => view('client.team'))->name('team');
@@ -33,6 +35,18 @@ Route::get('/admin', function () {
 })->middleware(['auth'])->name('admin.dashboard');
 
 
+// Event CRUD (auth required for create/edit/delete)
+Route::middleware('auth')->group(function () {
+    Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
+    Route::post('/events', [EventController::class, 'store'])->name('events.store');
+    Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
+    Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
+    Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+});
+
+// Public show route
+Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
+
 /**************************sponsor */
 Route::get('/sponsors', [SponsorController::class, 'index'])->name('sponsors.ListeSponsor');
 
@@ -45,3 +59,4 @@ Route::get('/sponsors/{sponsor}', [SponsorController::class, 'show'])->name('spo
 Route::get('/sponsors/{sponsor}/edit', [SponsorController::class, 'edit'])->name('sponsors.edit');
 Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('sponsors.update');
 Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
+
