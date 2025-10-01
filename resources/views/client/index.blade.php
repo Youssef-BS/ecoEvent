@@ -22,6 +22,7 @@
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
 </head>
+
 <body>
     <div id="spinner"
         class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
@@ -78,27 +79,112 @@
 
 
     <!-- Video Start -->
-    <div class="container-fluid bg-primary mb-5 wow fadeIn" data-wow-delay="0.1s">
-        <div class="container">
-            <div class="row g-0">
-                <div class="col-lg-11">
-                    <div class="h-100 py-5 d-flex align-items-center">
-                        <button type="button" class="btn-play" data-bs-toggle="modal"
-                            data-src="https://www.youtube.com/embed/DWRcNpR6Kdc" data-bs-target="#videoModal">
-                            <span></span>
-                        </button>
-                        <h3 class="ms-5 mb-0">Together, we can build a world where everyone has the chance to thrive.
-                        </h3>
-                    </div>
+    <div class="container my-5">
+        <h2 class="text-center mb-4">Nos Sponsors</h2>
+
+        <div class="sponsor-slider-wrapper">
+            <div class="sponsor-slider">
+                @foreach(array_merge($sponsors->toArray(), $sponsors->toArray()) as $sponsor)
+                <div class="sponsor-item">
+                    @if($sponsor['logo'])
+                    <img src="{{ asset('storage/' . $sponsor['logo']) }}"
+                        alt="{{ $sponsor['name'] }}"
+                        class="img-fluid mb-2">
+                    @else
+                    <div class="no-logo">No Logo</div>
+                    @endif
+                    <p class="sponsor-name">{{ $sponsor['name'] }}</p>
                 </div>
-                <div class="d-none d-lg-block col-lg-1">
-                    <div class="h-100 w-100 bg-secondary d-flex align-items-center justify-content-center">
-                        <span class="text-white" style="transform: rotate(-90deg);">Scroll Down</span>
-                    </div>
-                </div>
+                @endforeach
             </div>
         </div>
     </div>
+
+    <style>
+        .sponsor-slider-wrapper {
+            width: 100%;
+            overflow: hidden;
+
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            position: relative;
+        }
+
+
+        .sponsor-slider {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+
+            width: max-content;
+            animation: scrollSponsors 30s linear infinite;
+        }
+
+        .sponsor-item {
+            width: 180px;
+            height: 150px;
+            flex-shrink: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sponsor-item img {
+            max-height: 80px;
+            max-width: 100%;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .sponsor-name {
+            font-weight: 600;
+            font-size: 14px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            max-width: 100%;
+        }
+
+        .no-logo {
+            background: #6c757d;
+            color: #fff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        /* Animation fluide */
+        @keyframes scrollSponsors {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+
+
+    <style>
+        .sponsor-slider::-webkit-scrollbar {
+            display: none;
+
+        }
+
+        .sponsor-slider {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
     <!-- Video End -->
 
 
@@ -748,7 +834,7 @@
 
 
     <!-- Footer Start -->
-@include('client.layouts.footer')
+    @include('client.layouts.footer')
     <!-- Footer End -->
 
 
