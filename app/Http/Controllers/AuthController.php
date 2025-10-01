@@ -31,7 +31,8 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('/')->with('success', 'Inscription réussie, bienvenue !');
+        
+        return redirect()->route('home')->with('success', 'Inscription réussie, bienvenue !');
     }
 
 
@@ -47,11 +48,8 @@ public function login(Request $request)
 
         $user = Auth::user();
 
-        if ($user->role === 'admin') {
-            $redirectTo = '/admin';
-        } else {
-            $redirectTo = '/';
-        }
+        // Prefer named routes for clarity and resilience
+        $redirectTo = $user->role === 'admin' ? route('admin.dashboard') : route('home');
 
         return redirect()->intended($redirectTo)->with('success', 'Connexion réussie !');
     }
