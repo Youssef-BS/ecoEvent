@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\MessagerieController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
@@ -60,3 +62,18 @@ Route::get('/sponsors/{sponsor}/edit', [SponsorController::class, 'edit'])->name
 Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('sponsors.update');
 Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
 
+Route::middleware('auth')->group(function () {
+    // Messages
+    Route::get('/messagerie', [MessagerieController::class, 'index'])->name('messagerie.index');
+    Route::get('/messagerie/create', [MessagerieController::class, 'create'])->name('messagerie.create');
+    Route::post('/messagerie', [MessagerieController::class, 'store'])->name('messagerie.store');
+    Route::get('/messagerie/{userId}', [MessagerieController::class, 'show'])->name('messagerie.show');
+    Route::delete('/messagerie/{messagerie}', [MessagerieController::class, 'destroy'])->name('messagerie.destroy');
+
+    // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unreadCount');
+});
