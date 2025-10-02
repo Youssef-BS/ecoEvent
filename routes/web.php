@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\UserController;
 
@@ -62,8 +63,20 @@ Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('s
 Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
 
 
-// Donation Routes
+Route::middleware(['auth'])->group(function () {
+    Route::resource('posts', PostController::class)->names([
+        'index' => 'post.all',   
+        'show'  => 'post.view',  
+        'create'=> 'post.new',
+        'store' => 'post.store',
+        'edit'  => 'post.edit',
+        'update'=> 'post.update',
+        'destroy'=> 'post.delete',
+    ]);
+});
+
 Route::get('/admin/donations', [DonationController::class, 'adminIndex'])->name('donations.adminIndex');
 Route::post('/donations', [DonationController::class, 'store'])->name('donations.store');
 Route::put('/donations/{id}', [DonationController::class, 'update'])->name('donations.update');
 Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->name('donations.destroy');
+

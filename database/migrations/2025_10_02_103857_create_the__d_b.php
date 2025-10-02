@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('posts', function (Blueprint $table) {
+        Schema::create('the__d_b', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('event_id')->nullable()->constrained('events')->onDelete('set null');
-            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
-            $table->text('content');
-            $table->string('media_url')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('posts');
+        Schema::dropIfExists('the__d_b');
     }
 };
