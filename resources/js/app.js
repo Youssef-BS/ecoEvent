@@ -1,2 +1,2 @@
 import './bootstrap';
-import '../css/app.css';z
+import '../css/style.css';

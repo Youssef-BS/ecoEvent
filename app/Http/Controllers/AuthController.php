@@ -12,8 +12,8 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
-        $request->validate(
-            [
+        try {
+            $request->validate([
                 'first_name' => 'required|string|max:50',
                 'last_name' => 'required|string|max:50',
                 'email' => 'required|string|email|max:100|unique:users',
@@ -23,27 +23,37 @@ class AuthController extends Controller
                 'bio' => 'nullable|string|max:255',
                 'latitude' => 'nullable|numeric',
                 'longitude' => 'nullable|numeric',
-            ]
-        );
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('logos', 'public');
-        }
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'image' => $imagePath,
-            'password' => Hash::make($request->password),
-            'role' => 'user',
-            'bio' => $request->bio,
-            'location' => $request->latitude . ',' . $request->longitude,
-        ]);
-        Auth::login($user);
-        return redirect()->route('home')->with('success', 'Inscription réussie, bienvenue !');
-    }
+            ]);
 
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('logos', 'public');
+            }
+
+            $location = null;
+            if ($request->filled('latitude') && $request->filled('longitude')) {
+                $location = $request->latitude . ',' . $request->longitude;
+            }
+
+            $user = User::create([
+                'first_name' => $request->first_name,
+                'last_name' => $request->last_name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'image' => $imagePath,
+                'password' => Hash::make($request->password),
+                'role' => 'user', // ← Définition explicite du rôle
+                'bio' => $request->bio,
+                'location' => $location,
+            ]);
+
+            Auth::login($user);
+            return redirect()->route('home')->with('success', 'Inscription réussie, bienvenue !');
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+        }
+    }
 
     public function login(Request $request)
     {
@@ -52,30 +62,35 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (Auth::attempt($credentials, $request->remember)) {
+        if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
 
             $user = Auth::user();
 
-            if ($user->role === 'admin') {
-                $redirectTo = '/admin';
-            } else {
-                $redirectTo = '/';
+            // Vérification sécurisée du rôle
+            if (!$user) {
+                Auth::logout();
+                throw ValidationException::withMessages([
+                    'email' => __('Erreur lors de la récupération de l\'utilisateur.'),
+                ]);
             }
 
-        // Prefer named routes for clarity and resilience
-        $redirectTo = $user->role === 'admin' ? route('admin.dashboard') : route('home');
-            return redirect()->intended($redirectTo)->with('success', 'Connexion réussie !');
+            // Vérifiez que l'utilisateur a bien un rôle
+            $userRole = $user->role ?? 'user'; // Valeur par défaut si le rôle n'existe pas
+
+            // Redirection basée sur le rôle
+            if ($userRole === 'admin') {
+                return redirect()->intended('/admin')->with('success', 'Connexion réussie !');
+            } else {
+                return redirect()->intended('/')->with('success', 'Connexion réussie !');
+            }
+        }
 
         throw ValidationException::withMessages([
             'email' => __('Les informations de connexion sont incorrectes.'),
         ]);
-
     }
 
-
-
-}
     public function logout(Request $request)
     {
         Auth::logout();

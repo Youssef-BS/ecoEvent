@@ -29,7 +29,38 @@
 
                     <a href="{{ route('contact') }}" class="nav-item nav-link">Contact</a>
                 </div>
+                @auth
+                    <!-- Notifications -->
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle position-relative" data-bs-toggle="dropdown">
+                            <i class="fas fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="notificationCount" style="display: none;">
+                0
+            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a href="{{ route('notifications.index') }}" class="dropdown-item">
+                                View All Notifications
+                            </a>
+                        </div>
+                    </div>
 
+                    <!-- Messages -->
+                    <div class="nav-item dropdown ">
+                        <a href="#" class="nav-link dropdown-toggle position-relative" data-bs-toggle="dropdown">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a href="{{ route('messagerie.index') }}" class="dropdown-item">
+                                <i class="fas fa-inbox me-2"></i>Inbox
+                            </a>
+                            <a href="{{ route('messagerie.create') }}" class="dropdown-item">
+                                <i class="fas fa-plus me-2"></i>New Message
+                            </a>
+                        </div>
+                    </div>
+                @endauth
                 <!-- Authentication Links -->
                 <div class="navbar-nav ms-auto">
                     @auth
@@ -83,3 +114,22 @@
         </nav>
     </div>
 </div>
+<style>
+    /* Notification et messages en blanc */
+    .nav-bar .navbar .nav-link .fa-bell,
+    .nav-bar .navbar .nav-link .fa-envelope {
+        color: white !important;
+    }
+
+    /* Icônes dans les dropdown menus → noir */
+    .nav-bar .navbar .dropdown-menu i {
+        color: black !important;
+    }
+
+    /* Badge notification */
+    #notificationCount {
+        background-color: red !important;
+        color: white !important;
+    }
+</style>
+
