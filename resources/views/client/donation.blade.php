@@ -46,32 +46,6 @@
     <!-- Topbar End -->
 
 
-    <!-- Navbar Start -->
-
-    <!-- Page Header End -->
-
-
-
-
-    <!-- Video Modal Start -->
-    <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content rounded-0">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel">Youtube Video</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- 16:9 aspect ratio -->
-                    <div class="ratio ratio-16x9">
-                        <iframe class="embed-responsive-item" src="" id="video" allowfullscreen
-                            allowscriptaccess="always" allow="autoplay"></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- Video Modal End -->
 
 
     <!-- Donation Start -->
@@ -81,181 +55,97 @@
                 <p class="section-title bg-white text-center text-primary px-3">Donation</p>
                 <h1 class="display-6 mb-4">Our Donation Causes Around the World</h1>
             </div>
+
+            <!-- Statistics Start -->
+    <div class="container-fluid py-5">
+        <div class="container">
             <div class="row g-4">
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
-                    <div class="donation-item d-flex h-100 p-4">
-                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
-                            <h6 class="mb-0">Raised</h6>
-                            <span class="mb-2">$8000</span>
-                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
-                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="85"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    <span class="fs-4">85%</span>
-                                </div>
-                            </div>
-                            <h6 class="mb-0">Goal</h6>
-                            <span>$10000</span>
-                        </div>
-                        <div class="donation-detail">
-                            <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-1.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Food</a>
-                            </div>
-                            <a href="#!" class="h3 d-inline-block">Healthy Food</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
-                        </div>
+                <div class="col-lg-3 col-md-6 wow fadeIn" data-wow-delay="0.1s">
+                    <div class="bg-white text-center p-4 rounded shadow-sm">
+                        <i class="fa fa-heart fa-3x text-primary mb-3"></i>
+                        <h2 class="text-primary mb-2" data-toggle="counter-up">{{ $totalCampaigns }}</h2>
+                        <p class="fw-semibold mb-0">Total Campaigns</p>
+                        <small class="text-muted">Active donation causes</small>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.13s">
-                    <div class="donation-item d-flex h-100 p-4">
-                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
-                            <h6 class="mb-0">Raised</h6>
-                            <span class="mb-2">$8000</span>
-                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
-                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="95"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    <span class="fs-4">95%</span>
-                                </div>
-                            </div>
-                            <h6 class="mb-0">Goal</h6>
-                            <span>$10000</span>
-                        </div>
-                        <div class="donation-detail">
-                            <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-2.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Health</a>
-                            </div>
-                            <a href="#!" class="h3 d-inline-block">Water Treatment</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
-                        </div>
+                <div class="col-lg-3 col-md-6 wow fadeIn" data-wow-delay="0.3s">
+                    <div class="bg-white text-center p-4 rounded shadow-sm">
+                        <i class="fa fa-users fa-3x text-primary mb-3"></i>
+                        <h2 class="text-primary mb-2" data-toggle="counter-up">{{ $totalDonors }}</h2>
+                        <p class="fw-semibold mb-0">Total Donors</p>
+                        <small class="text-muted">Generous supporters</small>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.5s">
-                    <div class="donation-item d-flex h-100 p-4">
-                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
-                            <h6 class="mb-0">Raised</h6>
-                            <span class="mb-2">$8000</span>
-                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
-                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="75"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    <span class="fs-4">75%</span>
-                                </div>
-                            </div>
-                            <h6 class="mb-0">Goal</h6>
-                            <span>$10000</span>
-                        </div>
-                        <div class="donation-detail">
-                            <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-3.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Education</a>
-                            </div>
-                            <a href="#!" class="h3 d-inline-block">Education Support</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
-                        </div>
+                <div class="col-lg-3 col-md-6 wow fadeIn" data-wow-delay="0.5s">
+                    <div class="bg-white text-center p-4 rounded shadow-sm">
+                        <i class="fa fa-dollar-sign fa-3x text-primary mb-3"></i>
+                        <h2 class="text-primary mb-2" data-toggle="counter-up">{{ number_format($totalRaised) }}</h2>
+                        <p class="fw-semibold mb-0">Total Raised</p>
+                        <small class="text-muted">Dollars collected</small>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
-                    <div class="donation-item d-flex h-100 p-4">
-                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
-                            <h6 class="mb-0">Raised</h6>
-                            <span class="mb-2">$8000</span>
-                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
-                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="85"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    <span class="fs-4">85%</span>
-                                </div>
-                            </div>
-                            <h6 class="mb-0">Goal</h6>
-                            <span>$10000</span>
-                        </div>
-                        <div class="donation-detail">
-                            <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-1.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Food</a>
-                            </div>
-                            <a href="#!" class="h3 d-inline-block">Healthy Food</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.13s">
-                    <div class="donation-item d-flex h-100 p-4">
-                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
-                            <h6 class="mb-0">Raised</h6>
-                            <span class="mb-2">$8000</span>
-                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
-                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="95"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    <span class="fs-4">95%</span>
-                                </div>
-                            </div>
-                            <h6 class="mb-0">Goal</h6>
-                            <span>$10000</span>
-                        </div>
-                        <div class="donation-detail">
-                            <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-2.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Health</a>
-                            </div>
-                            <a href="#!" class="h3 d-inline-block">Water Treatment</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.5s">
-                    <div class="donation-item d-flex h-100 p-4">
-                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
-                            <h6 class="mb-0">Raised</h6>
-                            <span class="mb-2">$8000</span>
-                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
-                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="75"
-                                    aria-valuemin="0" aria-valuemax="100">
-                                    <span class="fs-4">75%</span>
-                                </div>
-                            </div>
-                            <h6 class="mb-0">Goal</h6>
-                            <span>$10000</span>
-                        </div>
-                        <div class="donation-detail">
-                            <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-3.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Education</a>
-                            </div>
-                            <a href="#!" class="h3 d-inline-block">Education Support</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
-                        </div>
+                <div class="col-lg-3 col-md-6 wow fadeIn" data-wow-delay="0.7s">
+                    <div class="bg-white text-center p-4 rounded shadow-sm">
+                        <i class="fa fa-check-circle fa-3x text-primary mb-3"></i>
+                        <h2 class="text-primary mb-2" data-toggle="counter-up">{{ $completedCampaigns }}</h2>
+                        <p class="fw-semibold mb-0">Completed</p>
+                        <small class="text-muted">Successful campaigns</small>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Statistics End -->
+     
+            <div class="row g-4">
+                @forelse($donations as $donation)
+                    <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
+                        <div class="donation-item d-flex h-100 p-4">
+                            <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
+                                <h6 class="mb-0">Raised</h6>
+                                <span class="mb-2">${{ number_format($donation->reached, 2) }}</span>
+                                <div class="progress d-flex align-items-end w-100 h-100 mb-2">
+                                    @php
+                                    $progress = ($donation->reached / $donation->amount) * 100;
+                                    $progress = min($progress, 100);
+                                    @endphp
+                                    <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="{{ $progress }}"
+                                        aria-valuemin="0" aria-valuemax="100">
+                                        <span class="fs-4">{{ number_format($progress, 0) }}%</span>
+                                    </div>
+                                </div>
+                                <h6 class="mb-0">Goal</h6>
+                                <span>${{ number_format($donation->amount, 2) }}</span>
+                            </div>
+                            <div class="donation-detail">
+                                <div class="position-relative mb-4">
+                                @if($donation->image)
+                                    <img class="img-fluid w-100" src="{{ asset('storage/donations/' . $donation->image) }}" alt="{{ $donation->title }}" style="height: 200px; object-fit: cover;">
+                                @else
+                                    <img class="img-fluid w-100" src="{{ asset('img/donation-1.jpg') }}" alt="{{ $donation->title }}" style="height: 200px; object-fit: cover;">
+                                @endif
+                                </div>
+                                <a href="#!" class="h3 d-inline-block">{{ $donation->title }}</a>
+                                <p>{{ $donation->description }}
+                                </p>
+                                
+                                <small class="text-muted mt-2"><i class="fa fa-users me-1"></i>{{ $donation->donor_count }} Donators</small>
+                                <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
+                                    Now</a>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                <div class="col-12 text-center">
+                    <p class="text-muted">No donation campaigns available at the moment.</p>
+                </div>
+                @endforelse
+            </div>
+        </div>
+    </div>
     <!-- Donation End -->
 
-
+  
     <!-- Donate Start -->
     <div class="container-fluid donate py-5">
         <div class="container">
