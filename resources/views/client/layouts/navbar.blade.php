@@ -19,6 +19,7 @@
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
                         <div class="dropdown-menu bg-light m-0">
                             <a href="{{ route('event') }}" class="dropdown-item">Event</a>
+                            <a href="{{ route('post.all') }}" class="dropdown-item">Post</a>
                             <a href="{{ route('feature') }}" class="dropdown-item">Feature</a>
                             <a href="{{ route('team') }}" class="dropdown-item">Our Team</a>
                             <a href="{{ route('testimonial') }}" class="dropdown-item">Testimonial</a>

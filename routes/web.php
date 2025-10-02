@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\UserController;
 
@@ -59,4 +60,17 @@ Route::get('/sponsors/{sponsor}', [SponsorController::class, 'show'])->name('spo
 Route::get('/sponsors/{sponsor}/edit', [SponsorController::class, 'edit'])->name('sponsors.edit');
 Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('sponsors.update');
 Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
+
+Route::middleware(['auth'])->group(function () {
+    Route::resource('posts', PostController::class)->names([
+        'index' => 'post.all',   // GET /posts
+        'show'  => 'post.view',  // GET /posts/{post}
+        'create'=> 'post.new',
+        'store' => 'post.store',
+        'edit'  => 'post.edit',
+        'update'=> 'post.update',
+        'destroy'=> 'post.delete',
+    ]);
+});
+
 
