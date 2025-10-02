@@ -400,14 +400,55 @@
     <!-- Features End -->
 
 
-    <!-- Donation Start -->
-    <div class="container-fluid py-5">
-        <div class="container">
-            <div class="text-center mx-auto wow fadeIn" data-wow-delay="0.1s" style="max-width: 500px;">
-                <p class="section-title bg-white text-center text-primary px-3">Donation</p>
-                <h1 class="display-6 mb-4">Our Donation Causes Around the World</h1>
-            </div>
-            <div class="row g-4">
+<!-- Donation Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="text-center mx-auto wow fadeIn" data-wow-delay="0.1s" style="max-width: 500px;">
+            <p class="section-title bg-white text-center text-primary px-3">Donation</p>
+            <h1 class="display-6 mb-4">Our Donation Causes Around the World</h1>
+        </div>
+        <div class="row g-4">
+            @php
+                $delays = ['0.1s', '0.13s', '0.5s'];
+                $index = 0;
+            @endphp
+            @forelse($donations->take(3) as $donation)
+                <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="{{ $delays[$index] }}">
+                    <div class="donation-item d-flex h-100 p-4">
+                        <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
+                            <h6 class="mb-0">Raised</h6>
+                            <span class="mb-2">${{ number_format($donation->reached, 2) }}</span>
+                            <div class="progress d-flex align-items-end w-100 h-100 mb-2">
+                                @php
+                                    $progress = ($donation->reached / $donation->amount) * 100;
+                                    $progress = min($progress, 100);
+                                @endphp
+                                <div class="progress-bar w-100 bg-secondary" role="progressbar" aria-valuenow="{{ $progress }}"
+                                    aria-valuemin="0" aria-valuemax="100">
+                                    <span class="fs-4">{{ number_format($progress, 0) }}%</span>
+                                </div>
+                            </div>
+                            <h6 class="mb-0">Goal</h6>
+                            <span>${{ number_format($donation->amount, 2) }}</span>
+                        </div>
+                        <div class="donation-detail">
+                            <div class="position-relative mb-4">
+                                @if($donation->image)
+                                    <img class="img-fluid w-100" src="{{ asset('storage/donations/' . $donation->image) }}" alt="{{ $donation->title }}" style="height: 200px; object-fit: cover;">
+                                @else
+                                    <img class="img-fluid w-100" src="{{ asset('img/donation-1.jpg') }}" alt="{{ $donation->title }}" style="height: 200px; object-fit: cover;">
+                                @endif
+                            </div>
+                            <a href="#!" class="h3 d-inline-block">{{ $donation->title }}</a>
+                            <p>{{ $donation->description }}</p>
+                            <small class="text-muted mt-2"><i class="fa fa-users me-1"></i>{{ $donation->donor_count }} Donators</small>
+                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate Now</a>
+                        </div>
+                    </div>
+                </div>
+                @php $index++; @endphp
+            @empty
+                <!-- Fallback to static content if no donations exist -->
                 <div class="col-md-6 col-lg-4 wow fadeIn" data-wow-delay="0.1s">
                     <div class="donation-item d-flex h-100 p-4">
                         <div class="donation-progress d-flex flex-column flex-shrink-0 text-center me-4">
@@ -424,15 +465,11 @@
                         </div>
                         <div class="donation-detail">
                             <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-1.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Food</a>
+                                <img class="img-fluid w-100" src="img/donation-1.jpg" alt="" style="height: 200px; object-fit: cover;">
                             </div>
                             <a href="#!" class="h3 d-inline-block">Healthy Food</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
+                            <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
+                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate Now</a>
                         </div>
                     </div>
                 </div>
@@ -452,15 +489,11 @@
                         </div>
                         <div class="donation-detail">
                             <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-2.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Health</a>
+                                <img class="img-fluid w-100" src="img/donation-2.jpg" alt="" style="height: 200px; object-fit: cover;">
                             </div>
                             <a href="#!" class="h3 d-inline-block">Water Treatment</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
+                            <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
+                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate Now</a>
                         </div>
                     </div>
                 </div>
@@ -480,22 +513,19 @@
                         </div>
                         <div class="donation-detail">
                             <div class="position-relative mb-4">
-                                <img class="img-fluid w-100" src="img/donation-3.jpg" alt="">
-                                <a href="#!"
-                                    class="btn btn-sm btn-secondary px-3 position-absolute top-0 end-0">Education</a>
+                                <img class="img-fluid w-100" src="img/donation-3.jpg" alt="" style="height: 200px; object-fit: cover;">
                             </div>
                             <a href="#!" class="h3 d-inline-block">Education Support</a>
-                            <p>Through your donations and volunteer work, we spread kindness and support to children.
-                            </p>
-                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate
-                                Now</a>
+                            <p>Through your donations and volunteer work, we spread kindness and support to children.</p>
+                            <a href="#!" class="btn btn-primary w-100 py-3"><i class="fa fa-plus me-2"></i>Donate Now</a>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endforelse
         </div>
     </div>
-    <!-- Donation End -->
+</div>
+<!-- Donation End -->
 
 
     <!-- Banner Start -->

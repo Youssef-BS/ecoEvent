@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Donation;
 use App\Models\Sponsor;
 use Illuminate\Http\Request;
 
@@ -15,8 +16,9 @@ class SponsorController extends Controller
     }
    public function home()
     {
+        $donations = Donation::orderBy('created_at', 'desc')->take(3)->get();
         $sponsors = Sponsor::all();
-        return view('client.index', compact('sponsors'));
+        return view('client.index', compact('sponsors','donations'));
     }
     public function create()
     {
