@@ -1,14 +1,15 @@
 <?php
 
-use App\Http\Controllers\MessagerieController;
-use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DonationController;
-use App\Http\Controllers\EventController;
 use App\Http\Controllers\PostController;
-use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\SponsorController;
+use App\Http\Controllers\DonationController;
+use App\Http\Controllers\MessagerieController;
+use App\Http\Controllers\NotificationController;
 
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
@@ -100,3 +101,12 @@ Route::put('/donations/{id}', [DonationController::class, 'update'])->name('dona
 Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->name('donations.destroy');
 
 
+
+
+
+
+Route::prefix('/admin/events/{event}/products')->name('products.')->group(function () {
+    Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::get('/create', [ProductController::class, 'create'])->name('create');
+    Route::post('/', [ProductController::class, 'store'])->name('store');
+});

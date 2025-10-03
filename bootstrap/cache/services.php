@@ -24,15 +24,15 @@
     20 => 'Illuminate\\Translation\\TranslationServiceProvider',
     21 => 'Illuminate\\Validation\\ValidationServiceProvider',
     22 => 'Illuminate\\View\\ViewServiceProvider',
-    23 => 'Laravel\\Pail\\PailServiceProvider',
-    24 => 'Laravel\\Reverb\\ApplicationManagerServiceProvider',
-    25 => 'Laravel\\Reverb\\ReverbServiceProvider',
-    26 => 'Laravel\\Sail\\SailServiceProvider',
-    27 => 'Laravel\\Tinker\\TinkerServiceProvider',
-    28 => 'Carbon\\Laravel\\ServiceProvider',
-    29 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    30 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    31 => 'Phiki\\Adapters\\Laravel\\PhikiServiceProvider',
+    23 => 'Laravel\\Breeze\\BreezeServiceProvider',
+    24 => 'Laravel\\Pail\\PailServiceProvider',
+    25 => 'Laravel\\Reverb\\ApplicationManagerServiceProvider',
+    26 => 'Laravel\\Reverb\\ReverbServiceProvider',
+    27 => 'Laravel\\Sail\\SailServiceProvider',
+    28 => 'Laravel\\Tinker\\TinkerServiceProvider',
+    29 => 'Carbon\\Laravel\\ServiceProvider',
+    30 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
+    31 => 'Termwind\\Laravel\\TermwindServiceProvider',
     32 => 'App\\Providers\\AppServiceProvider',
     33 => 'App\\Providers\\BroadcastServiceProvider',
   ),
@@ -53,9 +53,8 @@
     12 => 'Carbon\\Laravel\\ServiceProvider',
     13 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
     14 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    15 => 'Phiki\\Adapters\\Laravel\\PhikiServiceProvider',
-    16 => 'App\\Providers\\AppServiceProvider',
-    17 => 'App\\Providers\\BroadcastServiceProvider',
+    15 => 'App\\Providers\\AppServiceProvider',
+    16 => 'App\\Providers\\BroadcastServiceProvider',
   ),
   'deferred' => 
   array (
@@ -210,6 +209,7 @@
     'validator' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'validation.presence' => 'Illuminate\\Validation\\ValidationServiceProvider',
     'Illuminate\\Contracts\\Validation\\UncompromisedVerifier' => 'Illuminate\\Validation\\ValidationServiceProvider',
+    'Laravel\\Breeze\\Console\\InstallCommand' => 'Laravel\\Breeze\\BreezeServiceProvider',
     'Laravel\\Reverb\\ApplicationManager' => 'Laravel\\Reverb\\ApplicationManagerServiceProvider',
     'Laravel\\Reverb\\Contracts\\ApplicationProvider' => 'Laravel\\Reverb\\ApplicationManagerServiceProvider',
     'Laravel\\Sail\\Console\\InstallCommand' => 'Laravel\\Sail\\SailServiceProvider',
@@ -255,6 +255,9 @@
     array (
     ),
     'Illuminate\\Validation\\ValidationServiceProvider' => 
+    array (
+    ),
+    'Laravel\\Breeze\\BreezeServiceProvider' => 
     array (
     ),
     'Laravel\\Reverb\\ApplicationManagerServiceProvider' => 
