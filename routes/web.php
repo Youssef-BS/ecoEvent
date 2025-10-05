@@ -10,7 +10,7 @@ use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
-
+use App\Http\Controllers\ComplaintController;
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
 Route::get('/', [SponsorController::class, 'home'])->name('home');
@@ -100,6 +100,16 @@ Route::post('/donations', [DonationController::class, 'store'])->name('donations
 Route::put('/donations/{id}', [DonationController::class, 'update'])->name('donations.update');
 Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->name('donations.destroy');
 
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
+    Route::get('/complaints/user', [ComplaintController::class, 'userComplaints'])->name('complaints.user');
+    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
+    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::put('/complaints/{id}', [ComplaintController::class, 'update'])->name('complaints.update');
+    Route::delete('/complaints/{id}', [ComplaintController::class, 'destroy'])->name('complaints.destroy');
+    Route::post('/complaints/{id}/reply', [ComplaintController::class, 'reply'])->name('complaints.reply');
+});
 
 
 

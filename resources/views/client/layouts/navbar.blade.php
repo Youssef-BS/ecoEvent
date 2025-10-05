@@ -103,7 +103,22 @@
                         </div>
                     @endauth
                 </div>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle text-dark position-relative" data-bs-toggle="dropdown">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </a>
 
+                    <div class="dropdown-menu dropdown-menu-end bg-light border border-primary shadow p-1">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <button type="button" class="btn btn-sm btn-primary px-2 py-1 me-1 flex-fill" style="font-size: 0.75rem;" onclick="openComplaintWindow()">
+                                Report an Issue
+                            </button>
+                            <a href="{{ route('complaints.user') }}" class="btn btn-sm btn-outline-primary px-2 py-1" style="font-size: 0.75rem;">
+                                <i class="fas fa-list"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
                 <!-- Social Media Links -->
                 <div class="d-none d-lg-flex ms-3">
                     <a class="btn btn-square btn-dark ms-2" href="#"><i class="fab fa-twitter"></i></a>
@@ -133,3 +148,17 @@
     }
 </style>
 
+<script>
+function openComplaintWindow() {
+  const width = 600;
+  const height = 700;
+  const left = (screen.width / 2) - (width / 2);
+  const top = (screen.height / 2) - (height / 2);
+
+  window.open(
+    "{{ route('complaints.create') }}", 
+    "ComplaintWindow",
+    `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`
+  );
+}
+</script>
