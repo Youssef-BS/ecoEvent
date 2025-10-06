@@ -45,7 +45,7 @@ class SponsorController extends Controller
 
         Sponsor::create($data);
 
-        return redirect()->route('sponsors.ListeSponsor')->with('success', 'Sponsor créé avec succès.');
+        return redirect()->route('admin.dashboard')->with('success', 'Sponsor créé avec succès.');
     }
 
 
@@ -82,13 +82,13 @@ class SponsorController extends Controller
 
         $sponsor->update($data);
 
-        return redirect()->route('sponsors.ListeSponsor')->with('success', 'Sponsor mis à jour avec succès.');
+        return redirect()->route('admin.dashboard')->with('success', 'Sponsor mis à jour avec succès.');
     }
 
 
     public function destroy(Sponsor $sponsor)
     {
         $sponsor->delete();
-        return redirect()->route('sponsors.ListeSponsor')->with('success', 'Sponsor supprimé avec succès.');
+        return redirect()->route('admin.dashboard')->with('success', 'Sponsor supprimé avec succès.');
     }
 }

@@ -24,6 +24,14 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    {{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             @if($products->isEmpty())
                 <div class="text-center py-5">
                     <div class="mb-4">
@@ -45,8 +53,8 @@
                                         <div id="productCarousel{{ $product->id }}" class="carousel slide" data-bs-ride="carousel">
                                             <div class="carousel-inner">
                                                 @foreach($product->images as $index => $image)
-                                                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                                        <img src="{{ asset('storage/' . $image->path) }}" 
+                                                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}"> 
+                                                         <img src="{{ Storage::url($image->path) }}"
                                                              class="d-block w-100" 
                                                              alt="{{ $product->name }}"
                                                              style="height: 200px; object-fit: cover;">
@@ -87,10 +95,17 @@
                                             <span class="h5 text-primary mb-0">${{ number_format($product->price, 2) }}</span>
                                         </div>
                                         <div class="btn-group">
-                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Edit">
+                                            <a href="{{ route('products.edit', ['event' => $event->id, 'product' => $product->id]) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Edit">
                                                 <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="tooltip" title="Delete">
+                                            </a>
+                                            <button class="btn btn-outline-danger btn-sm delete-product" 
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Delete"
+                                                    data-product-id="{{ $product->id }}"
+                                                    data-product-name="{{ $product->name }}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -110,6 +125,30 @@
                     </div>
                 @endif
             @endif
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProductModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="productNameToDelete"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteProductForm" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Delete Product</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
@@ -155,11 +194,33 @@
 
 @push('scripts')
 <script>
-    // Initialize Bootstrap tooltips
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Delete product functionality
+        const deleteButtons = document.querySelectorAll('.delete-product');
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteProductModal'));
+        const productNameElement = document.getElementById('productNameToDelete');
+        const deleteForm = document.getElementById('deleteProductForm');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                const productName = this.getAttribute('data-product-name');
+                
+                // Set the product name in the modal
+                productNameElement.textContent = productName;
+                
+                // Set the form action - adjust this based on your actual delete route
+                deleteForm.action = `/admin/events/{{ $event->id }}/products/${productId}`;
+                
+                // Show the modal
+                deleteModal.show();
+            });
         });
     });
 </script>
