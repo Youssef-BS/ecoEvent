@@ -8,8 +8,10 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\DonationController;
+use App\Http\Controllers\EventResourceController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ResourceController;
 
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
@@ -36,7 +38,7 @@ Route::get('/profile', [UserController::class, 'showProfile'])
     ->name('profile.show');
 
 Route::get('/admin', function () {
-    return view('admin.dashboard');
+    return view('admin.layouts.dashboard');
 })->middleware(['auth'])->name('admin.dashboard');
 
 
@@ -51,7 +53,8 @@ Route::middleware('auth')->group(function () {
 
 // Public show route
 Route::get('/events/{event}', [EventController::class, 'show'])->name('events.show');
-
+Route::get('events/{event}/resources', [EventResourceController::class, 'edit'])->name('events.resources.edit');
+Route::put('events/{event}/resources', [EventResourceController::class, 'update'])->name('events.resources.update');
 /**************************sponsor */
 Route::get('/sponsors', [SponsorController::class, 'index'])->name('sponsors.ListeSponsor');
 
@@ -66,6 +69,7 @@ Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('s
 Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
 
 
+Route::resource('resources', ResourceController::class);
 Route::middleware('auth')->group(function () {
     // Messages
     Route::get('/messagerie', [MessagerieController::class, 'index'])->name('messagerie.index');
@@ -85,13 +89,13 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::resource('posts', PostController::class)->names([
-        'index' => 'post.all',   
-        'show'  => 'post.view',  
-        'create'=> 'post.new',
+        'index' => 'post.all',
+        'show'  => 'post.view',
+        'create' => 'post.new',
         'store' => 'post.store',
         'edit'  => 'post.edit',
-        'update'=> 'post.update',
-        'destroy'=> 'post.delete',
+        'update' => 'post.update',
+        'destroy' => 'post.delete',
     ]);
 });
 
@@ -109,7 +113,7 @@ Route::prefix('/admin/events/{event}/products')->name('products.')->group(functi
     Route::get('/', [ProductController::class, 'index'])->name('index');
     Route::get('/create', [ProductController::class, 'create'])->name('create');
     Route::post('/', [ProductController::class, 'store'])->name('store');
-    
+
     Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
     Route::put('/{product}', [ProductController::class, 'update'])->name('update');
     Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');

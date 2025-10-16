@@ -40,11 +40,12 @@ class Event extends Model
         return $this->hasMany(Review::class);
     }
 
-    public function resources(): HasMany
+    public function resources()
     {
-        return $this->hasMany(Resource::class);
+        return $this->belongsToMany(Resource::class)
+            ->withPivot('quantity')
+            ->withTimestamps();
     }
-
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
