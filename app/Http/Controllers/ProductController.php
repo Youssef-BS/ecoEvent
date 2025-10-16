@@ -12,7 +12,7 @@ class ProductController extends Controller
 {
     public function create(Event $event)
     {
-        return view('admin.products.create', compact('event'));
+        return view('client.products.create', compact('event'));
     }
 
     public function store(Request $request, Event $event)
@@ -59,12 +59,15 @@ class ProductController extends Controller
                          ->latest()
                          ->paginate(12);
 
-        return view('admin.products.index', compact('event', 'products'));
+        return view('client.products.index', compact('event', 'products'));
     }
+ 
+
+
 
     public function edit(Event $event, Product $product)
     {
-        return view('admin.products.edit', compact('event', 'product'));
+        return view('client.products.edit', compact('event', 'product'));
     }
 
     public function update(Request $request, Event $event, Product $product)
@@ -130,4 +133,11 @@ class ProductController extends Controller
                            ->with('error', 'Failed to delete product. Please try again.');
         }
     }
+
+public function show(Event $event, Product $product)
+{
+    $product->load('images');
+    
+    return view('client.products.show', compact('event', 'product'));
+}
 }

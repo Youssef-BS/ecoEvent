@@ -104,9 +104,15 @@
                     <p class="text-muted mb-0">Created by: {{ $event->user?->first_name }}
                         {{ $event->user?->last_name }}</p>
                 </div>
+
+
             </div>
         </div>
+            <a href="{{ route('products.index', $event) }}" class="btn btn-primary mt-2 text-secondary rouded-3">
+    View Products for sale for this event
+</a>
     </div>
+
 
     @includeIf('client.layouts.footer')
 
