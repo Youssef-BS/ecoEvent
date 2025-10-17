@@ -1,11 +1,9 @@
-
-
 <div class="container-fluid bg-secondary px-0 wow fadeIn" data-wow-delay="0.1s">
     <div class="nav-bar">
         <nav class="navbar navbar-expand-lg bg-primary navbar-dark px-4 py-lg-0">
             <h4 class="d-lg-none m-0">Menu</h4>
             <button type="button" class="navbar-toggler me-0" data-bs-toggle="collapse"
-                data-bs-target="#navbarCollapse">
+                    data-bs-target="#navbarCollapse">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarCollapse">
@@ -47,9 +45,13 @@
                     </div>
 
                     <!-- Messages -->
-                    <div class="nav-item dropdown ">
+                    <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle position-relative" data-bs-toggle="dropdown">
                             <i class="fas fa-envelope"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                                  id="messageCount" style="display: none;">
+                0
+            </span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
                             <a href="{{ route('messagerie.index') }}" class="dropdown-item">
@@ -114,6 +116,7 @@
         </nav>
     </div>
 </div>
+
 <style>
     /* Notification et messages en blanc */
     .nav-bar .navbar .nav-link .fa-bell,
@@ -126,10 +129,57 @@
         color: black !important;
     }
 
-    /* Badge notification */
-    #notificationCount {
+    /* Badge notification and messages */
+    #notificationCount,
+    #messageCount {
         background-color: red !important;
         color: white !important;
+        font-size: 0.65rem;
+        padding: 0.25rem 0.4rem;
+        min-width: 18px;
+        text-align: center;
+    }
+
+    /* Position badges closer to icons */
+    .nav-item.dropdown .nav-link .badge {
+        transform: translate(-50%, -50%) !important;
+        top: 7px !important;
+        left: 60% !important;
     }
 </style>
 
+@auth
+    <script>
+        // Function to update message count
+        function updateMessageCount() {
+            fetch('{{ route("messagerie.unread-count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('messageCount');
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(error => console.error('Error fetching message count:', error));
+        }
+
+        // Update message count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMessageCount();
+
+            // Poll every 3 seconds for new messages
+            setInterval(updateMessageCount, 100);
+        });
+
+        // Listen for real-time message events (if you're using Laravel Echo/Pusher)
+        @if(config('broadcasting.default') !== 'null')
+        window.Echo.private('App.Models.User.{{ Auth::id() }}')
+            .listen('MessageSent', (e) => {
+                updateMessageCount();
+            });
+        @endif
+    </script>
+@endauth

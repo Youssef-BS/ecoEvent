@@ -73,6 +73,28 @@
                                 <p>Say hi to {{ $otherUser->first_name }}</p>
                             </div>
                         @endforelse
+
+                        <!-- Typing Indicator -->
+                        <div id="typingIndicator" class="typing-indicator" style="display: none;">
+                            <div class="message-wrapper received">
+                                <div class="avatar-mini">
+                                    @if($otherUser->image)
+                                        <img src="{{ asset('storage/' . $otherUser->image) }}" alt="{{ $otherUser->first_name }}">
+                                    @else
+                                        <div class="avatar-placeholder-mini">
+                                            {{ substr($otherUser->first_name, 0, 1) }}
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="message-bubble received typing-bubble">
+                                    <div class="typing-dots">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <!-- Input Area -->
                     <div class="input-area">
@@ -108,6 +130,11 @@
                 const chatMessages = document.getElementById('chatMessages');
                 const messageForm = document.getElementById('messageForm');
                 const contentTextarea = document.getElementById('messageContent');
+                const typingIndicator = document.getElementById('typingIndicator');
+
+                // Typing variables
+                let typingTimer;
+                let isTyping = false;
 
                 // Auto-scroll to bottom
                 chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -121,25 +148,83 @@
                 console.log('🚀 Connecting to WebSocket for user:', userId);
                 console.log('🎯 Listening on channel: chat.' + userId);
 
-                // CORRECTION : Écoute sur le bon canal
+                // Listen for new messages
                 window.Echo.private('chat.' + userId)
-                    .listen('.message.sent', (e) => { // Notez le point avant le nom de l'événement
+                    .listen('.message.sent', (e) => {
                         console.log('📩 New message received:', e);
 
-                        // Vérifier si le message vient de l'autre utilisateur
                         if (e.sender.id === otherUserId) {
                             console.log('✅ Adding message to chat from:', e.sender.id);
                             addMessageToChat(e, false);
                         } else {
                             console.log('❌ Ignoring message from sender:', e.sender.id);
                         }
+                    })
+                    // Listen for typing events
+                    .listen('.user.typing', (e) => {
+                        console.log('⌨️ Typing event received:', e);
+
+                        if (e.user_id === otherUserId) {
+                            if (e.is_typing) {
+                                typingIndicator.style.display = 'block';
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            } else {
+                                typingIndicator.style.display = 'none';
+                            }
+                        }
                     });
+
+                // Send typing status
+                function sendTypingStatus(typing) {
+                    fetch('{{ route("messagerie.typing") }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            receiver_id: otherUserId,
+                            is_typing: typing
+                        })
+                    }).catch(error => console.error('Error sending typing status:', error));
+                }
+
+                // Detect typing
+                contentTextarea.addEventListener('input', function() {
+                    if (!isTyping) {
+                        isTyping = true;
+                        sendTypingStatus(true);
+                    }
+
+                    clearTimeout(typingTimer);
+
+                    typingTimer = setTimeout(function() {
+                        isTyping = false;
+                        sendTypingStatus(false);
+                    }, 2000);
+                });
+
+                // Stop typing on blur
+                contentTextarea.addEventListener('blur', function() {
+                    if (isTyping) {
+                        clearTimeout(typingTimer);
+                        isTyping = false;
+                        sendTypingStatus(false);
+                    }
+                });
 
                 // Send message with AJAX
                 messageForm.addEventListener('submit', function(e) {
                     e.preventDefault();
                     const content = contentTextarea.value.trim();
                     if (!content) return;
+
+                    // Stop typing indicator when sending
+                    if (isTyping) {
+                        clearTimeout(typingTimer);
+                        isTyping = false;
+                        sendTypingStatus(false);
+                    }
 
                     const submitBtn = messageForm.querySelector('.btn-send');
                     submitBtn.disabled = true;
@@ -160,7 +245,6 @@
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
-                                // Ajouter le message localement immédiatement
                                 const messageData = {
                                     content: content,
                                     sent_at: new Date().toISOString(),
@@ -230,17 +314,16 @@
                     `;
                     }
 
-                    // Supprimer le message "empty chat" si présent
                     const emptyChat = chatMessages.querySelector('.empty-chat');
                     if (emptyChat) {
                         emptyChat.remove();
                     }
 
-                    chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+                    // Insert before typing indicator
+                    typingIndicator.insertAdjacentHTML('beforebegin', messageHtml);
                     chatMessages.scrollTop = chatMessages.scrollHeight;
 
-                    // Animation
-                    const newMessage = chatMessages.lastElementChild;
+                    const newMessage = typingIndicator.previousElementSibling;
                     newMessage.style.opacity = '0';
                     newMessage.style.transform = 'translateY(20px)';
 
@@ -257,7 +340,6 @@
                     return div.innerHTML;
                 }
 
-                // Debug: Vérifier la connexion Echo
                 setTimeout(() => {
                     console.log('Echo connection state:', window.Echo.connector.socket.readyState);
                     console.log('Subscribed channels:', window.Echo.connector.channels);
@@ -283,8 +365,6 @@
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             display: flex;
         }
-
-        /* Fix for Bootstrap row - COMPLETE OVERRIDE */
         .messenger-wrapper .row {
             display: flex !important;
             flex-wrap: nowrap !important;
@@ -293,15 +373,12 @@
             margin: 0 !important;
             flex: 1 !important;
         }
-
         .messenger-wrapper .row > [class*="col-"] {
             padding: 0 !important;
             height: 100% !important;
             display: flex !important;
             flex-direction: column !important;
         }
-
-        /* Sidebar */
         .messenger-sidebar {
             background: #fff;
             border-right: 1px solid #e4e6eb;
@@ -406,8 +483,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-
-        /* Chat Area - COMPLETELY FIXED */
         .messenger-chat {
             display: flex !important;
             flex-direction: column !important;
@@ -417,61 +492,6 @@
             overflow: hidden !important;
             flex: 1 !important;
         }
-        .chat-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid #e4e6eb;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fff;
-            flex-shrink: 0 !important;
-        }
-        .chat-header .avatar-wrapper img {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-        }
-        .chat-header .avatar-placeholder {
-            width: 40px;
-            height: 40px;
-            font-size: 16px;
-        }
-        .chat-header h5 {
-            color: #050505;
-            font-weight: 600;
-            font-size: 17px;
-            margin-bottom: 2px;
-        }
-        .chat-actions {
-            display: flex;
-            gap: 8px;
-        }
-        .btn-action {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: none;
-            background: #f0f2f5;
-            color: #0084ff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        .btn-action:hover {
-            background: #e4e6eb;
-            transform: scale(1.1);
-        }
-        .btn-back {
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #050505;
-            margin-right: 12px;
-            text-decoration: none;
-        }
-
-        /* Messages Area - THE KEY FIX */
         .messages-area {
             flex: 1 1 0 !important;
             overflow-y: auto !important;
@@ -544,6 +564,44 @@
             margin-top: 4px;
             display: block;
         }
+
+        /* Typing Indicator Styles */
+        .typing-indicator {
+            margin-bottom: 8px;
+        }
+        .typing-bubble {
+            padding: 12px 16px !important;
+            background: #f0f2f5 !important;
+        }
+        .typing-dots {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #90949c;
+            animation: typing 1.4s infinite;
+        }
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes typing {
+            0%, 60%, 100% {
+                opacity: 0.3;
+                transform: translateY(0);
+            }
+            30% {
+                opacity: 1;
+                transform: translateY(-8px);
+            }
+        }
+
         .animate-in {
             animation: slideUp 0.3s ease-out;
         }
@@ -573,8 +631,6 @@
         .empty-chat h5 {
             margin-bottom: 8px;
         }
-
-        /* Input Area - THE CRITICAL FIX */
         .input-area {
             padding: 12px 24px !important;
             border-top: 1px solid #e4e6eb;
@@ -642,8 +698,6 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-
-        /* Scrollbar */
         .messages-area::-webkit-scrollbar,
         .conversations-list::-webkit-scrollbar {
             width: 6px;
@@ -661,8 +715,6 @@
         .conversations-list::-webkit-scrollbar-thumb:hover {
             background: #b0b3b8;
         }
-
-        /* Responsive */
         @media (max-width: 768px) {
             .messenger-container {
                 padding: 0;

@@ -19,7 +19,7 @@
                         <input type="text" placeholder="Search Messenger" id="searchInput">
                     </div>
                     <!-- Conversations List -->
-                    <div class="conversations-list-full">
+                    <div class="conversations-list-full" id="conversationsList">
                         @forelse($conversations as $userId => $messages)
                             @php
                                 $lastMessage = $messages->first();
@@ -31,7 +31,8 @@
                                     ->count();
                             @endphp
                             <a href="{{ route('messagerie.show', $otherUser->id) }}"
-                               class="conversation-item {{ $unreadMessages > 0 ? 'unread' : '' }}">
+                               class="conversation-item {{ $unreadMessages > 0 ? 'unread' : '' }}"
+                               data-user-id="{{ $otherUser->id }}">
                                 <div class="avatar-wrapper">
                                     @if($otherUser->image)
                                         <img src="{{ asset('storage/' . $otherUser->image) }}"
@@ -99,26 +100,65 @@
             <span>{{ session('success') }}</span>
         </div>
     @endif
-    <script>
-        // Search functionality
-        document.getElementById('searchInput')?.addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            const conversations = document.querySelectorAll('.conversation-item');
-            conversations.forEach(conv => {
-                const name = conv.querySelector('h6').textContent.toLowerCase();
-                const message = conv.querySelector('.last-message').textContent.toLowerCase();
-                if (name.includes(searchTerm) || message.includes(searchTerm)) {
-                    conv.style.display = 'flex';
-                } else {
-                    conv.style.display = 'none';
+
+    @push('scripts')
+        <script>
+            // Refresh conversations on page load and visibility change
+            function refreshConversations() {
+                // Reload the page to get fresh data
+                window.location.reload();
+            }
+
+            // Update when page becomes visible
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    refreshConversations();
                 }
             });
-        });
-        // Auto-hide toast
-        setTimeout(() => {
-            document.querySelector('.toast-notification')?.classList.remove('show');
-        }, 3000);
-    </script>
+
+            // Update when user returns to page
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted) {
+                    refreshConversations();
+                }
+            });
+
+            // Update when window gains focus
+            window.addEventListener('focus', function() {
+                refreshConversations();
+            });
+
+            // Search functionality
+            document.getElementById('searchInput')?.addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                const conversations = document.querySelectorAll('.conversation-item');
+                conversations.forEach(conv => {
+                    const name = conv.querySelector('h6').textContent.toLowerCase();
+                    const message = conv.querySelector('.last-message').textContent.toLowerCase();
+                    if (name.includes(searchTerm) || message.includes(searchTerm)) {
+                        conv.style.display = 'flex';
+                    } else {
+                        conv.style.display = 'none';
+                    }
+                });
+            });
+
+            // Auto-hide toast
+            setTimeout(() => {
+                document.querySelector('.toast-notification')?.classList.remove('show');
+            }, 3000);
+
+            // Listen for new messages (if using Laravel Echo)
+            @if(config('broadcasting.default') !== 'null')
+            window.Echo.private('chat.{{ Auth::id() }}')
+                .listen('.message.sent', (e) => {
+                    console.log('New message received, refreshing conversations');
+                    refreshConversations();
+                });
+            @endif
+        </script>
+    @endpush
+
     <style>
         /* Container */
         .messenger-container {
