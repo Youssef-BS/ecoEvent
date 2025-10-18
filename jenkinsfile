@@ -12,22 +12,43 @@ pipeline {
             }
         }
         
-        // Stage 2: Install PHP Dependencies
-        stage('Install Dependencies') {
+        // Stage 2: Install PHP Dependencies using Docker
+        stage('Install PHP Dependencies') {
+            agent {
+                docker {
+                    image 'composer:2.2'
+                    args '-v /var/lib/jenkins/workspace/Laravel:/app'
+                }
+            }
             steps {
                 sh 'composer install --no-dev --optimize-autoloader'
             }
         }
         
-        // Stage 3: Install NPM Dependencies
+        // Stage 3: Install NPM Dependencies (including dev dependencies)
         stage('Install NPM Dependencies') {
+            agent {
+                docker {
+                    image 'node:18'
+                    args '-v /var/lib/jenkins/workspace/Laravel:/app -w /app'
+                }
+            }
             steps {
-                sh 'npm ci --only=production'
+                // Use npm install instead of npm ci to ensure dev dependencies
+                sh 'npm install'
+                // Or if you want to be more specific:
+                // sh 'npm install --include=dev'
             }
         }
         
         // Stage 4: Build Frontend Assets
         stage('Build Assets') {
+            agent {
+                docker {
+                    image 'node:18'
+                    args '-v /var/lib/jenkins/workspace/Laravel:/app -w /app'
+                }
+            }
             steps {
                 sh 'npm run build'
             }
