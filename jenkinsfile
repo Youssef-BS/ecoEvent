@@ -1,59 +1,72 @@
 pipeline {
     agent any
+
     stages {
         // Stage 1: Pull code from GitHub
         stage('GIT') {
             steps {
                 git(
-                    branch: 'Devops', 
+                    branch: 'Devops',
                     url: 'https://github.com/Youssef-BS/ecoEvent.git',
                     credentialsId: 'github-creds'
                 )
             }
         }
-        
+
         // Stage 2: Install PHP Dependencies
         stage('Install Dependencies') {
             steps {
                 sh 'composer install --no-dev --optimize-autoloader'
             }
         }
-        
-        // Stage 3: Install NPM Dependencies
+
+        // Stage 3: Install NPM Dependencies (in Node 18 container)
         stage('Install NPM Dependencies') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    args '-u root' // allow writing files owned by Jenkins
+                }
+            }
             steps {
                 sh 'npm ci --only=production'
             }
         }
-        
-        // Stage 4: Build Frontend Assets
+
+        // Stage 4: Build Frontend Assets (also in Node 18 container)
         stage('Build Assets') {
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    args '-u root'
+                }
+            }
             steps {
                 sh 'npm run build'
             }
         }
-        
+
         // Stage 5: Run PHPUnit Tests
         stage('PHPUnit Tests') {
             steps {
                 sh './vendor/bin/phpunit'
             }
         }
-        
+
         // Stage 6: Generate Laravel Key
         stage('Generate Application Key') {
             steps {
                 sh 'php artisan key:generate'
             }
         }
-        
+
         // Stage 7: Run Laravel Migrations
         stage('Run Migrations') {
             steps {
                 sh 'php artisan migrate --force'
             }
         }
-        
+
         // Stage 8: Cache Configuration
         stage('Optimize Application') {
             steps {
@@ -62,14 +75,14 @@ pipeline {
                 sh 'php artisan view:cache'
             }
         }
-        
+
         // Stage 9: Build Docker Images
         stage('Build Docker Images') {
             steps {
                 sh 'sudo docker compose build'
             }
         }
-        
+
         // Stage 10: Login to Docker Hub
         stage('Login to Docker Hub') {
             steps {
@@ -85,7 +98,7 @@ pipeline {
                 }
             }
         }
-        
+
         // Stage 11: Push Docker Images
         stage('Push Docker Images') {
             steps {
@@ -95,26 +108,24 @@ pipeline {
                 '''
             }
         }
-        
+
         // Stage 12: Deploy with Docker Compose
         stage('Deploy with Docker Compose') {
             steps {
                 sh 'sudo docker compose down && sudo docker compose up -d'
             }
         }
-        
+
         // Stage 13: Verify Deployment
         stage('Verify Deployment') {
             steps {
                 script {
                     retry(5) {
                         sleep 10
-                        // Test Laravel application health check
                         sh 'curl -f http://192.168.163.128:8089/ || exit 1'
                     }
                 }
             }
         }
     }
-    
 }
