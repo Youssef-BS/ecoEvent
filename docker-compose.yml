@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: youssef-bs/ecoevent-app:latest
+    image: oussemakhemiri2/ecoevent-app:latest
     container_name: ecoevent-app
     restart: unless-stopped
     working_dir: /var/www
