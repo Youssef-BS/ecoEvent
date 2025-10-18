@@ -6,7 +6,10 @@ export default defineConfig({
     plugins: [
         laravel({
             // input: ['resources/css/app.css', 'resources/js/app.js'], // My group, it work with Bootstrap intead of tailwind
-            input: [],
+            input: [
+                'resources/css/app.css', 
+                'resources/js/app.js'
+            ],
             refresh: true,
         }),
         tailwindcss(),
