@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    image: youssef-bs/ecoevent-app:latest
+    container_name: ecoevent-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=ecoevent
+      - DB_USERNAME=laravel_user
+      - DB_PASSWORD=laravel_password
+    depends_on:
+      - db
+
+  webserver:
+    image: nginx:alpine
+    container_name: ecoevent-webserver
+    restart: unless-stopped
+    ports:
+      - "8089:80"
+    volumes:
+      - .:/var/www
+      - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+    depends_on:
+      - app
+
+  db:
+    image: mysql:8.0
+    container_name: ecoevent-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ecoevent
+      MYSQL_USER: laravel_user
+      MYSQL_PASSWORD: laravel_password
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+volumes:
+  dbdata:
