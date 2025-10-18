@@ -19,10 +19,11 @@ pipeline {
             }
         }
         
-        stage('Build Frontend') {
+        stage('Build Frontend with Node 20') {
             steps {
                 sh '''
-                    docker run --rm -v $PWD:/app -w /app node:18 sh -c "npm install && npm run build"
+                    # Use Docker to run Node.js 20 for the build
+                    docker run --rm -v $PWD:/app -w /app node:20-alpine sh -c "npm install && npm run build"
                 '''
             }
         }
