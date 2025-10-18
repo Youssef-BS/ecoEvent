@@ -11,54 +11,33 @@ pipeline {
             }
         }
         
-        // Install required tools on Jenkins
-        stage('Install Tools') {
+        stage('Install PHP Dependencies') {
             steps {
                 sh '''
-                    # Install PHP and extensions
-                    sudo apt update
-                    sudo apt install -y php php-cli php-mysql php-zip php-gd php-mbstring php-curl php-xml php-bcmath
-                    
-                    # Install Composer
-                    curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
-                    
-                    # Install Node.js
-                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-                    sudo apt install -y nodejs
-                    
-                    # Verify installations
-                    php --version
-                    composer --version
-                    node --version
-                    npm --version
+                    docker run --rm -v $PWD:/app composer:2.2 install --no-dev --optimize-autoloader
                 '''
             }
         }
         
-        stage('Install PHP Dependencies') {
+        stage('Build Frontend') {
             steps {
-                sh 'composer install --no-dev --optimize-autoloader'
-            }
-        }
-        
-        stage('Install NPM Dependencies') {
-            steps {
-                sh 'npm install'
-            }
-        }
-        
-        stage('Build Assets') {
-            steps {
-                sh 'npm run build'
+                sh '''
+                    docker run --rm -v $PWD:/app -w /app node:18 sh -c "npm install && npm run build"
+                '''
             }
         }
         
         stage('Run Migrations and Optimize') {
             steps {
                 sh '''
-                    php artisan config:cache
-                    php artisan route:cache
-                    php artisan view:cache
+                    docker run --rm -v $PWD:/app -w /app php:8.2-cli sh -c "
+                        apt-get update && 
+                        apt-get install -y libzip-dev libpng-dev libonig-dev libxml2-dev &&
+                        docker-php-ext-install zip gd mbstring pdo_mysql &&
+                        php artisan config:cache &&
+                        php artisan route:cache && 
+                        php artisan view:cache
+                    "
                 '''
             }
         }
