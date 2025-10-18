@@ -35,17 +35,11 @@ pipeline {
             steps {
                 sh 'npm ci --only=production'
             }
-    }
+        }
 
 
         // Stage 4: Build Frontend Assets (also in Node 18 container)
         stage('Build Assets') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    args '-u root'
-                }
-            }
             steps {
                 sh 'npm run build'
             }
