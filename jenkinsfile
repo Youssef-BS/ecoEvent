@@ -21,17 +21,22 @@ pipeline {
         }
 
         // Stage 3: Install NPM Dependencies (in Node 18 container)
-        stage('Install NPM Dependencies') {
-            agent {
-                docker {
-                    image 'node:18-alpine'
-                    args '-u root' // allow writing files owned by Jenkins
-                }
+        stage('Install Node & NPM') {
+            steps {
+                sh '''
+                curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                sudo apt-get install -y nodejs
+                node -v
+                npm -v
+                '''
             }
+        }
+        stage('Install NPM Dependencies') {
             steps {
                 sh 'npm ci --only=production'
             }
-        }
+    }
+
 
         // Stage 4: Build Frontend Assets (also in Node 18 container)
         stage('Build Assets') {
