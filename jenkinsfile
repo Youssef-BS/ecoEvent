@@ -1,0 +1,159 @@
+pipeline {
+    agent any
+    stages {
+        // Stage 1: Pull code from GitHub
+        stage('GIT') {
+            steps {
+                git(
+                    branch: 'Devops', 
+                    url: 'https://github.com/Youssef-BS/ecoEvent.git',
+                    credentialsId: 'github-creds'
+                )
+            }
+        }
+        
+        // Stage 2: Install PHP Dependencies
+        stage('Install Dependencies') {
+            steps {
+                sh 'composer install --no-dev --optimize-autoloader'
+            }
+        }
+        
+        // Stage 3: Install NPM Dependencies
+        stage('Install NPM Dependencies') {
+            steps {
+                sh 'npm ci --only=production'
+            }
+        }
+        
+        // Stage 4: Build Frontend Assets
+        stage('Build Assets') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+        
+        // Stage 5: Run PHPUnit Tests
+        stage('PHPUnit Tests') {
+            steps {
+                sh './vendor/bin/phpunit'
+            }
+        }
+        
+        // Stage 6: Generate Laravel Key
+        stage('Generate Application Key') {
+            steps {
+                sh 'php artisan key:generate'
+            }
+        }
+        
+        // Stage 7: Run Laravel Migrations
+        stage('Run Migrations') {
+            steps {
+                sh 'php artisan migrate --force'
+            }
+        }
+        
+        // Stage 8: Cache Configuration
+        stage('Optimize Application') {
+            steps {
+                sh 'php artisan config:cache'
+                sh 'php artisan route:cache'
+                sh 'php artisan view:cache'
+            }
+        }
+        
+        // Stage 9: Build Docker Images
+        stage('Build Docker Images') {
+            steps {
+                sh 'sudo docker compose build'
+            }
+        }
+        
+        // Stage 10: Login to Docker Hub
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKER_HUB_CREDENTIALS',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        sudo docker logout
+                        echo "${DOCKER_PASSWORD}" | sudo docker login -u "${DOCKER_USER}" --password-stdin
+                    '''
+                }
+            }
+        }
+        
+        // Stage 11: Push Docker Images
+        stage('Push Docker Images') {
+            steps {
+                sh '''
+                    sudo docker compose push
+                    sudo docker logout
+                '''
+            }
+        }
+        
+        // Stage 12: Deploy with Docker Compose
+        stage('Deploy with Docker Compose') {
+            steps {
+                sh 'sudo docker compose down && sudo docker compose up -d'
+            }
+        }
+        
+        // Stage 13: Verify Deployment
+        stage('Verify Deployment') {
+            steps {
+                script {
+                    retry(5) {
+                        sleep 10
+                        // Test Laravel application health check
+                        sh 'curl -f http://192.168.163.128:8089/ || exit 1'
+                    }
+                }
+            }
+        }
+    }
+    
+    // Post-build actions
+    post {
+        success {
+            mail to: 'oussema2khemiri5@gmail.com',
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} Completed",
+                body: """
+                Build Successfully Completed!
+
+                Job Name: ${env.JOB_NAME}
+                Build Number: #${env.BUILD_NUMBER}
+                Build Duration: ${currentBuild.durationString}
+                
+                Console Output: ${env.BUILD_URL}console
+                Build Details: ${env.BUILD_URL}
+                
+                Laravel application deployed successfully.
+                """
+        }
+        failure {
+            mail to: 'oussema2khemiri5@gmail.com',
+                subject: "URGENT: ${env.JOB_NAME} #${env.BUILD_NUMBER} Failed",
+                body: """
+                BUILD FAILURE ALERT!
+
+                Job Name: ${env.JOB_NAME}
+                Build Number: #${env.BUILD_NUMBER}
+                Build Duration: ${currentBuild.durationString}
+                
+                Error Location: ${env.BUILD_URL}console
+                Build Details: ${env.BUILD_URL}
+                
+                Immediate Action Required:
+                1. Review console output for errors
+                2. Check recent code changes
+                3. Verify dependency services
+                4. Re-run build after fixes
+                """
+        }
+    }
+}
