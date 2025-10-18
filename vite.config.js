@@ -7,7 +7,7 @@ export default defineConfig({
         laravel({
             // input: ['resources/css/app.css', 'resources/js/app.js'], // My group, it work with Bootstrap intead of tailwind
             input: [
-                'resources/css/app.css', 
+                'resources/css/style.css', 
                 'resources/js/app.js'
             ],
             refresh: true,
