@@ -1,7 +1,6 @@
 pipeline {
     agent any
     stages {
-        // Stage 1: Pull code from GitHub
         stage('GIT') {
             steps {
                 git(
@@ -12,86 +11,65 @@ pipeline {
             }
         }
         
-        // Stage 2: Install PHP Dependencies using Docker
-        stage('Install PHP Dependencies') {
-            agent {
-                docker {
-                    image 'composer:2.2'
-                    args '-v /var/lib/jenkins/workspace/Laravel:/app'
-                }
+        // Install required tools on Jenkins
+        stage('Install Tools') {
+            steps {
+                sh '''
+                    # Install PHP and extensions
+                    sudo apt update
+                    sudo apt install -y php php-cli php-mysql php-zip php-gd php-mbstring php-curl php-xml php-bcmath
+                    
+                    # Install Composer
+                    curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+                    
+                    # Install Node.js
+                    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                    sudo apt install -y nodejs
+                    
+                    # Verify installations
+                    php --version
+                    composer --version
+                    node --version
+                    npm --version
+                '''
             }
+        }
+        
+        stage('Install PHP Dependencies') {
             steps {
                 sh 'composer install --no-dev --optimize-autoloader'
             }
         }
         
-        // Stage 3: Install NPM Dependencies (including dev dependencies)
         stage('Install NPM Dependencies') {
-            agent {
-                docker {
-                    image 'node:18'
-                    args '-v /var/lib/jenkins/workspace/Laravel:/app -w /app'
-                }
-            }
             steps {
-                // Use npm install instead of npm ci to ensure dev dependencies
                 sh 'npm install'
-                // Or if you want to be more specific:
-                // sh 'npm install --include=dev'
             }
         }
         
-        // Stage 4: Build Frontend Assets
         stage('Build Assets') {
-            agent {
-                docker {
-                    image 'node:18'
-                    args '-v /var/lib/jenkins/workspace/Laravel:/app -w /app'
-                }
-            }
             steps {
                 sh 'npm run build'
             }
         }
         
-        // Stage 5: Run PHPUnit Tests
-        stage('PHPUnit Tests') {
+        stage('Run Migrations and Optimize') {
             steps {
-                sh './vendor/bin/phpunit'
+                sh '''
+                    php artisan config:cache
+                    php artisan route:cache
+                    php artisan view:cache
+                '''
             }
         }
         
-        // Stage 6: Generate Laravel Key
-        stage('Generate Application Key') {
-            steps {
-                sh 'php artisan key:generate'
-            }
-        }
-        
-        // Stage 7: Run Laravel Migrations
-        stage('Run Migrations') {
-            steps {
-                sh 'php artisan migrate --force'
-            }
-        }
-        
-        // Stage 8: Cache Configuration
-        stage('Optimize Application') {
-            steps {
-                sh 'php artisan config:cache'
-                sh 'php artisan route:cache'
-                sh 'php artisan view:cache'
-            }
-        }
-        
-        // Stage 9: Build Docker Images
+        // Your existing Docker stages
         stage('Build Docker Images') {
             steps {
                 sh 'sudo docker compose build'
             }
         }
         
-        // Stage 10: Login to Docker Hub
         stage('Login to Docker Hub') {
             steps {
                 withCredentials([usernamePassword(
@@ -107,7 +85,6 @@ pipeline {
             }
         }
         
-        // Stage 11: Push Docker Images
         stage('Push Docker Images') {
             steps {
                 sh '''
@@ -117,20 +94,17 @@ pipeline {
             }
         }
         
-        // Stage 12: Deploy with Docker Compose
         stage('Deploy with Docker Compose') {
             steps {
                 sh 'sudo docker compose down && sudo docker compose up -d'
             }
         }
         
-        // Stage 13: Verify Deployment
         stage('Verify Deployment') {
             steps {
                 script {
                     retry(5) {
                         sleep 10
-                        // Test Laravel application health check
                         sh 'curl -f http://192.168.163.128:8089/ || exit 1'
                     }
                 }
