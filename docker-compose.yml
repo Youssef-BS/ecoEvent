@@ -21,7 +21,7 @@ services:
       - db
 
   webserver:
-    image: nginx:alpine
+    image: oussemakhemiri2/nginx:alpine
     container_name: ecoevent-webserver
     restart: unless-stopped
     ports:
@@ -33,7 +33,7 @@ services:
       - app
 
   db:
-    image: mysql:8.0
+    image: oussemakhemiri2/mysql:8.0
     container_name: ecoevent-db
     restart: unless-stopped
     environment:
