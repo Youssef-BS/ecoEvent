@@ -77,6 +77,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/messagerie', [MessagerieController::class, 'store'])->name('messagerie.store');
     Route::get('/messagerie/{userId}', [MessagerieController::class, 'show'])->name('messagerie.show');
     Route::delete('/messagerie/{messagerie}', [MessagerieController::class, 'destroy'])->name('messagerie.destroy');
+    Route::get('/messagerie/unread/count', [MessagerieController::class, 'getUnreadCount'])->name('messagerie.unread-count');
+    Route::post('/messagerie/typing', [MessagerieController::class, 'typing'])->name('messagerie.typing');
+
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
@@ -91,7 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('posts', PostController::class)->names([
         'index' => 'post.all',
         'show'  => 'post.view',
-        'create' => 'post.new',
+        'create'=> 'post.new',
         'store' => 'post.store',
         'edit'  => 'post.edit',
         'update' => 'post.update',
@@ -113,7 +116,11 @@ Route::prefix('/events/{event}/products')->name('products.')->group(function () 
     Route::get('/', [ProductController::class, 'index'])->name('index');
     Route::get('/create', [ProductController::class, 'create'])->name('create');
     Route::post('/', [ProductController::class, 'store'])->name('store');
+
+
+
 Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+
     Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
     Route::put('/{product}', [ProductController::class, 'update'])->name('update');
     Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');

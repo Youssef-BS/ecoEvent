@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Events\MessageSent;
 use Illuminate\Support\Str;
+
 class MessagerieController extends Controller
 {
     public function index()
@@ -33,6 +34,7 @@ class MessagerieController extends Controller
             ->count();
         return view('client.messagerie.index', compact('conversations', 'unreadCount'));
     }
+
     public function show($userId)
     {
         if (!Auth::check()) {
@@ -47,13 +49,16 @@ class MessagerieController extends Controller
             $query->where('sender_id', $userId)
                 ->where('receiver_id', $user->getAuthIdentifier());
         })->orderBy('sent_at', 'asc')->get();
+
         // Marquer les messages comme lus
         Messagerie::where('receiver_id', $user->getAuthIdentifier())
             ->where('sender_id', $userId)
             ->where('status', '!=', MessageStatus::READ)
             ->update(['status' => MessageStatus::READ]);
+
         return view('client.messagerie.show', compact('messages', 'otherUser'));
     }
+
     public function store(Request $request)
     {
         if (!Auth::check()) {
@@ -65,10 +70,12 @@ class MessagerieController extends Controller
             }
             return redirect()->route('login')->withErrors(['error' => 'Veuillez vous connecter.']);
         }
+
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
             'content' => 'required|string|min:1|max:1000',
         ]);
+
         // Vérification supplémentaire que le contenu n'est pas vide
         if (empty(trim($request->input('content')))) {
             if ($request->expectsJson()) {
@@ -79,6 +86,7 @@ class MessagerieController extends Controller
             }
             return back()->withErrors(['content' => 'Le message ne peut pas être vide']);
         }
+
         // Si le content est un JSON (par erreur), extraire le vrai content
         $content = trim($request->input('content'));
         if (json_decode($content, true) !== null) {
@@ -87,6 +95,7 @@ class MessagerieController extends Controller
                 $content = trim($parsed['content']);
             }
         }
+
         try {
             $user = Auth::user();
             $message = Messagerie::create([
@@ -96,10 +105,13 @@ class MessagerieController extends Controller
                 'sent_at' => now(),
                 'status' => MessageStatus::SENT,
             ]);
+
             // Charger les relations pour l'événement
             $message->load(['sender']);
+
             // Événement de diffusion
             broadcast(new MessageSent($message));
+
             // Notification avec extrait du message
             Notification::create([
                 'user_id' => $request->input('receiver_id'),
@@ -107,6 +119,7 @@ class MessagerieController extends Controller
                 'notification_type' => NotificationType::INFO,
                 'status' => NotificationStatus::SENT,
             ]);
+
             // TOUJOURS retourner JSON pour les requêtes AJAX
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
@@ -114,6 +127,7 @@ class MessagerieController extends Controller
                     'message' => $message
                 ]);
             }
+
             return redirect()->route('messagerie.show', $request->input('receiver_id'))
                 ->with('success', 'Message sent successfully');
         } catch (\Exception $e) {
@@ -126,6 +140,7 @@ class MessagerieController extends Controller
             return back()->withErrors(['error' => 'Erreur lors de l\'envoi du message']);
         }
     }
+
     public function create()
     {
         if (!Auth::check()) {
@@ -134,6 +149,7 @@ class MessagerieController extends Controller
         $users = User::where('id', '!=', Auth::id())->get();
         return view('client.messagerie.create', compact('users'));
     }
+
     public function destroy(Messagerie $messagerie)
     {
         if (!Auth::check()) {
@@ -144,5 +160,42 @@ class MessagerieController extends Controller
         }
         $messagerie->delete();
         return back()->with('success', 'Message deleted successfully');
+    }
+
+    /**
+     * Get unread messages count for authenticated user
+     */
+    public function getUnreadCount()
+    {
+        if (!Auth::check()) {
+            return response()->json(['count' => 0]);
+        }
+
+        $count = Messagerie::where('receiver_id', Auth::id())
+            ->where('status', MessageStatus::SENT)
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
+    public function typing(Request $request)
+    {
+        if (!Auth::check()) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $request->validate([
+            'receiver_id' => 'required|exists:users,id',
+            'is_typing' => 'required|boolean',
+        ]);
+
+        $user = Auth::user();
+
+        broadcast(new \App\Events\UserTyping(
+            $user,
+            $request->receiver_id,
+            $request->is_typing
+        ))->toOthers();
+
+        return response()->json(['success' => true]);
     }
 }
