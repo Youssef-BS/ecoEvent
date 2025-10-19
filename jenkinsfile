@@ -1,6 +1,28 @@
 pipeline {
     agent any
     stages {
+        stage('Pre-Cleanup') {
+            steps {
+                cleanWs()
+                sh '''
+                    echo "=== Resetting workspace permissions ==="
+                    # Force reset all permissions to Jenkins user
+                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
+                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
+                    
+                    # Remove all cache and generated files
+                    sudo rm -rf bootstrap/cache/*.php 2>/dev/null || true
+                    sudo rm -rf storage/framework/* 2>/dev/null || true
+                    sudo rm -rf vendor node_modules 2>/dev/null || true
+                    
+                    # Recreate directories with proper permissions
+                    mkdir -p bootstrap/cache storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs
+                    chmod -R 775 bootstrap/cache storage
+                    chmod -R 777 storage/framework storage/logs
+                '''
+            }
+        }
+        
         stage('GIT') {
             steps {
                 git(
@@ -31,25 +53,23 @@ pipeline {
             }
         }
         
+        stage('Set Safe Permissions') {
+            steps {
+                sh '''
+                    echo "=== Setting safe permissions for build ==="
+                    chmod -R 755 .
+                    chmod -R 775 storage bootstrap/cache
+                    chmod -R 777 storage/framework storage/logs
+                '''
+            }
+        }
+        
         stage('Install Dependencies') {
             steps {
                 sh '''
                     composer install --no-dev --optimize-autoloader
                     npm install
                     npm run build
-                '''
-            }
-        }
-        
-        stage('Fix Host Permissions') {
-            steps {
-                sh '''
-                    echo "=== Setting correct permissions on host ==="
-                    sudo chown -R $USER:$USER .
-                    sudo find . -type f -exec chmod 644 {} \\;
-                    sudo find . -type d -exec chmod 755 {} \\;
-                    sudo chmod -R 775 storage bootstrap/cache
-                    sudo chmod -R 777 storage/framework storage/logs
                 '''
             }
         }
@@ -68,42 +88,15 @@ pipeline {
         
         stage('Wait for Services') {
             steps {
-                sh '''
-                    echo "Waiting for services to start..."
-                    sleep 30
-                '''
+                sh 'sleep 30'
             }
         }
         
-        stage('Fix Container Permissions') {
+        stage('Setup Application') {
             steps {
                 sh '''
-                    echo "=== Fixing permissions inside container ==="
-                    sudo docker exec ecoevent-app sh -c "
-                        chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache &&
-                        chmod -R 775 /var/www/storage /var/www/bootstrap/cache &&
-                        chmod -R 777 /var/www/storage/framework /var/www/storage/logs
-                    "
-                '''
-            }
-        }
-        
-        stage('Database Setup') {
-            steps {
-                sh '''
-                    echo "=== Setting up database ==="
-                    sudo docker exec ecoevent-app php artisan config:clear
-                    sudo docker exec ecoevent-app php artisan cache:clear
                     sudo docker exec ecoevent-app php artisan key:generate --force
                     sudo docker exec ecoevent-app php artisan migrate --force
-                '''
-            }
-        }
-        
-        stage('Laravel Optimization') {
-            steps {
-                sh '''
-                    echo "=== Optimizing Laravel ==="
                     sudo docker exec ecoevent-app php artisan config:cache
                     sudo docker exec ecoevent-app php artisan route:cache
                     sudo docker exec ecoevent-app php artisan view:cache
@@ -111,24 +104,23 @@ pipeline {
             }
         }
         
-        stage('Debug Application') {
+        stage('Post-Deploy Cleanup') {
             steps {
                 sh '''
-                    echo "=== Final Permission Check ==="
-                    sudo docker exec ecoevent-app ls -la storage/ bootstrap/cache/
+                    echo "=== Cleaning up after deployment ==="
+                    sudo docker compose down
                     
-                    echo "=== Application Logs ==="
-                    sudo docker exec ecoevent-app ls -la storage/logs/
-                    sudo docker exec ecoevent-app cat storage/logs/laravel.log 2>/dev/null || echo "No log file yet"
-                    
-                    echo "=== Testing Application ==="
-                    sudo docker exec ecoevent-app php artisan route:list || true
+                    # Reset permissions for next build
+                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
+                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
+                    chmod -R 755 .
                 '''
             }
         }
         
         stage('Verify Deployment') {
             steps {
+                sh 'sudo docker compose up -d'
                 script {
                     retry(5) {
                         sleep 10
@@ -138,5 +130,4 @@ pipeline {
             }
         }
     }
-    
 }
