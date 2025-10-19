@@ -29,22 +29,18 @@ pipeline {
         }
         
         stage('SonarQube Analysis') {
-            environment {
-                SONAR_PROJECT_KEY = "ecoEvent"
-                SONAR_HOST_URL = "http://your-sonarqube-server:9000"
-                SONAR_TOKEN = credentials('SonarQube-token') // stored in Jenkins credentials
-            }
             steps {
-                sh '''
-                    docker run --rm -v $PWD:/app -w /app sonarsource/sonar-scanner-cli \
-                    -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                    -Dsonar.sources=./app \
-                    -Dsonar.host.url=$SONAR_HOST_URL \
-                    -Dsonar.login=$SONAR_TOKEN
-                '''
+                withSonarQubeEnv('SonarQube') { // 'SonarQube' is the name you set in Jenkins global config
+                    sh '''
+                        # Run SonarScanner in Docker
+                        docker run --rm -v $PWD:/app -w /app sonarsource/sonar-scanner-cli \
+                        -Dsonar.projectKey=ecoEvent \
+                        -Dsonar.sources=./app \
+                        -Dsonar.login=$SONAR_AUTH_TOKEN
+                    '''
+                }
             }
         }
-
  
         stage('Run Migrations and Optimize') {
             steps {
