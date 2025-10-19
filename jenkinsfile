@@ -31,23 +31,24 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        echo "=== Running SonarQube analysis with Docker ==="
-                        
-                        # Use host machine IP instead of localhost
-                        docker run --rm \
-                        -e SONAR_HOST_URL="http://192.168.163.128:9000" \
-                        -e SONAR_LOGIN=$SONAR_AUTH_TOKEN \
-                        -v "$PWD:/usr/src" \
-                        sonarsource/sonar-scanner-cli:latest \
-                        -Dsonar.projectKey=ecoEvent-Laravel \
-                        -Dsonar.projectName="ecoEvent Laravel" \
-                        -Dsonar.projectVersion=1.0 \
-                        -Dsonar.sources=app,resources \
-                        -Dsonar.tests=tests \
-                        -Dsonar.php.coverage.reportPaths=reports/clover.xml \
-                        -Dsonar.php.tests.reportPath=reports/junit.xml
-                    '''
+                    withCredentials([string(credentialsId: 'SonarQube-token', variable: 'SONAR_TOKEN')]) {
+                        sh '''
+                            echo "=== Running SonarQube analysis ==="
+                            
+                            docker run --rm \
+                              -e SONAR_HOST_URL="http://192.168.163.128:9000" \
+                              -v "$PWD:/usr/src" \
+                              sonarsource/sonar-scanner-cli:latest \
+                              -Dsonar.projectKey=ecoEvent-Laravel \
+                              -Dsonar.projectName="ecoEvent Laravel" \
+                              -Dsonar.projectVersion=1.0 \
+                              -Dsonar.sources=app,resources \
+                              -Dsonar.tests=tests \
+                              -Dsonar.php.coverage.reportPaths=reports/clover.xml \
+                              -Dsonar.php.tests.reportPath=reports/junit.xml \
+                              -Dsonar.token=$SONAR_TOKEN
+                        '''
+                    }
                 }
             }
         }
