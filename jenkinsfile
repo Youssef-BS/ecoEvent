@@ -30,6 +30,7 @@ pipeline {
         
         stage('SONARQUBE SCAN') {
             steps {
+                withSonarQubeEnv('SonarQube') {
                 sh '''
                     docker run --rm --network="host" \
                     -v $PWD:/app -w /app \
@@ -38,6 +39,7 @@ pipeline {
                     -Dsonar.sources=./app \
                     -Dsonar.host.url=http://localhost:9000
                 '''
+                }
             }
         }
 
