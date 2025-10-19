@@ -89,6 +89,26 @@ pipeline {
             }
         }
         
+        stage('Laravel Setup') {
+            steps {
+                sh '''
+                    echo "=== Fixing permissions ==="
+                    sudo docker exec ecoevent-app chmod -R 775 storage/ bootstrap/cache/
+                    sudo docker exec ecoevent-app chown -R www-data:www-data storage/ bootstrap/cache/
+
+                    echo "=== Generating APP_KEY if not exists ==="
+                    sudo docker exec ecoevent-app php artisan key:generate --force
+
+                    echo "=== Clearing and caching config ==="
+                    sudo docker exec ecoevent-app php artisan config:clear
+                    sudo docker exec ecoevent-app php artisan config:cache
+                    sudo docker exec ecoevent-app php artisan route:cache
+                    sudo docker exec ecoevent-app php artisan view:cache
+                '''
+            }
+        }
+
+
         stage('Database Setup') {
             steps {
                 sh '''
