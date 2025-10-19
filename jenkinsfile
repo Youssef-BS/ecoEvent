@@ -1,30 +1,38 @@
 pipeline {
     agent any
     stages {
-        stage('Pre-Cleanup') {
+        stage('Reset Permissions') {
             steps {
-                cleanWs()
                 sh '''
-                    echo "=== Resetting workspace permissions ==="
-                    # Force reset all permissions to Jenkins user
-                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
-                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
+                    echo "=== Nuclear permission reset ==="
+                    # Find Jenkins user ID
+                    JENKINS_UID=$(id -u jenkins 2>/dev/null || echo "1000")
+                    JENKINS_GID=$(id -g jenkins 2>/dev/null || echo "1000")
+                    echo "Jenkins UID:GID: $JENKINS_UID:$JENKINS_GID"
                     
-                    # Remove all cache and generated files
+                    # Reset everything to Jenkins user
+                    sudo chown -R $JENKINS_UID:$JENKINS_GID . || true
+                    sudo chown -R jenkins:jenkins . || true
+                    sudo chown -R $(whoami):$(whoami) . || true
+                    
+                    # Remove all Docker-created files
                     sudo rm -rf bootstrap/cache/*.php 2>/dev/null || true
                     sudo rm -rf storage/framework/* 2>/dev/null || true
                     sudo rm -rf vendor node_modules 2>/dev/null || true
                     
-                    # Recreate directories with proper permissions
+                    # Recreate essential directories
                     mkdir -p bootstrap/cache storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs
                     chmod -R 775 bootstrap/cache storage
                     chmod -R 777 storage/framework storage/logs
+                    
+                    echo "=== Workspace cleaned ==="
                 '''
             }
         }
         
         stage('GIT') {
             steps {
+                cleanWs()  // Clean workspace before checkout
                 git(
                     branch: 'Devops', 
                     url: 'https://github.com/Youssef-BS/ecoEvent.git',
@@ -33,94 +41,59 @@ pipeline {
             }
         }
         
-        stage('Install Node.js 20') {
+        stage('Set Safe Environment') {
             steps {
                 sh '''
-                    sudo apt remove -y nodejs npm 2>/dev/null || true
-                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-                    sudo apt install -y nodejs
-                '''
-            }
-        }
-        
-        stage('Install PHP and Composer') {
-            steps {
-                sh '''
-                    sudo apt update
-                    sudo apt install -y php php-cli php-mysql php-zip php-gd php-mbstring php-curl php-xml php-bcmath
-                    curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
-                '''
-            }
-        }
-        
-        stage('Set Safe Permissions') {
-            steps {
-                sh '''
-                    echo "=== Setting safe permissions for build ==="
-                    chmod -R 755 .
-                    chmod -R 775 storage bootstrap/cache
-                    chmod -R 777 storage/framework storage/logs
-                '''
-            }
-        }
-        
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                    composer install --no-dev --optimize-autoloader
-                    npm install
-                    npm run build
+                    echo "=== Setting safe environment ==="
+                    # Set the user IDs for Docker Compose
+                    export CURRENT_UID=$(id -u)
+                    export CURRENT_GID=$(id -g)
+                    echo "Using UID:GID: $CURRENT_UID:$CURRENT_GID"
+                    
+                    # Make sure we own everything
+                    chown -R $CURRENT_UID:$CURRENT_GID . 2>/dev/null || true
+                    chmod -R 755 . 2>/dev/null || true
                 '''
             }
         }
         
         stage('Build Docker Images') {
             steps {
-                sh 'sudo docker compose build --no-cache'
+                sh '''
+                    # Build with explicit user context
+                    sudo docker compose build --no-cache --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)
+                '''
             }
         }
         
         stage('Deploy with Docker Compose') {
             steps {
-                sh 'sudo docker compose down && sudo docker compose up -d'
-            }
-        }
-        
-        stage('Wait for Services') {
-            steps {
-                sh 'sleep 30'
-            }
-        }
-        
-        stage('Setup Application') {
-            steps {
                 sh '''
-                    sudo docker exec ecoevent-app php artisan key:generate --force
-                    sudo docker exec ecoevent-app php artisan migrate --force
-                    sudo docker exec ecoevent-app php artisan config:cache
-                    sudo docker exec ecoevent-app php artisan route:cache
-                    sudo docker exec ecoevent-app php artisan view:cache
+                    # Stop and remove everything
+                    sudo docker compose down -v --remove-orphans
+                    
+                    # Start with explicit user
+                    export CURRENT_UID=$(id -u)
+                    export CURRENT_GID=$(id -g)
+                    sudo -E docker compose up -d
                 '''
             }
         }
         
-        stage('Post-Deploy Cleanup') {
+        stage('Wait and Setup') {
             steps {
                 sh '''
-                    echo "=== Cleaning up after deployment ==="
-                    sudo docker compose down
-                    
-                    # Reset permissions for next build
-                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
-                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
-                    chmod -R 755 .
+                    sleep 30
+                    # Run setup commands
+                    sudo docker exec ecoevent-app php artisan key:generate --force
+                    sudo docker exec ecoevent-app php artisan migrate --force
+                    sudo docker exec ecoevent-app php artisan config:cache
                 '''
             }
         }
         
         stage('Verify Deployment') {
             steps {
-                sh 'sudo docker compose up -d'
                 script {
                     retry(5) {
                         sleep 10
@@ -129,6 +102,32 @@ pipeline {
                 }
             }
         }
+        
+        stage('Post-Build Cleanup') {
+            steps {
+                sh '''
+                    echo "=== Cleaning up for next build ==="
+                    # Stop containers
+                    sudo docker compose down
+                    
+                    # Reset permissions
+                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
+                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
+                    
+                    # Remove Docker-created files
+                    sudo rm -rf bootstrap/cache/*.php storage/framework/* 2>/dev/null || true
+                '''
+            }
+        }
     }
     
+    post {
+        always {
+            sh '''
+                echo "=== Final permission reset ==="
+                sudo chown -R jenkins:jenkins . 2>/dev/null || true
+                sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
+            '''
+        }
+    }
 }
