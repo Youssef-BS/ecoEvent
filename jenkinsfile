@@ -30,18 +30,28 @@ pipeline {
             }
         }
         
-        stage('GIT') {
+        stage('Prepare Workspace') {
             steps {
                 sh '''
-                    echo "=== Forcibly cleaning workspace ==="
+                    echo "=== Preparing workspace ==="
                     sudo chown -R $(whoami):$(whoami) . || true
-                    sudo rm -rf bootstrap/cache/* storage/* vendor node_modules 2>/dev/null || true
+                    sudo chmod -R 775 bootstrap/cache storage || true
+                    sudo rm -rf bootstrap/cache/* storage/framework/* 2>/dev/null || true
                 '''
+            }
+        }
+
+        stage('GIT') {
+            steps {
                 git(
-                    branch: 'Devops', 
+                    branch: 'Devops',
                     url: 'https://github.com/Youssef-BS/ecoEvent.git',
                     credentialsId: 'github-creds'
                 )
+                sh '''
+                    git reset --hard
+                    git clean -fdx
+                '''
             }
         }
         
