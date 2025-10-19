@@ -28,32 +28,25 @@ pipeline {
             }
         }
         
-         stage('SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
-                        echo "=== Running SonarQube analysis ==="
+                        echo "=== Running SonarQube analysis with Docker ==="
                         
-                        # Install sonar-scanner if not present
-                        if ! command -v sonar-scanner &> /dev/null; then
-                            echo "Installing sonar-scanner..."
-                            wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
-                            unzip sonar-scanner-cli-4.8.0.2856-linux.zip
-                            sudo mv sonar-scanner-4.8.0.2856-linux /opt/sonar-scanner
-                            export PATH=$PATH:/opt/sonar-scanner/bin
-                        fi
-                        
-                        # Run sonar-scanner with PHP-specific configuration
-                        sonar-scanner \
-                          -Dsonar.projectKey=ecoEvent-Laravel \
-                          -Dsonar.projectName="ecoEvent Laravel" \
-                          -Dsonar.projectVersion=1.0 \
-                          -Dsonar.sources=app,resources \
-                          -Dsonar.tests=tests \
-                          -Dsonar.php.coverage.reportPaths=reports/clover.xml \
-                          -Dsonar.php.tests.reportPath=reports/junit.xml \
-                          -Dsonar.host.url=http://localhost:9000 \
-                          -Dsonar.login=$SONAR_AUTH_TOKEN
+                        # Run sonar-scanner in Docker (similar to Maven approach)
+                        docker run --rm \
+                        -e SONAR_HOST_URL="http://localhost:9000" \
+                        -e SONAR_LOGIN=$SONAR_AUTH_TOKEN \
+                        -v "$PWD:/usr/src" \
+                        sonarsource/sonar-scanner-cli:latest \
+                        -Dsonar.projectKey=ecoEvent-Laravel \
+                        -Dsonar.projectName="ecoEvent Laravel" \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=app,resources \
+                        -Dsonar.tests=tests \
+                        -Dsonar.php.coverage.reportPaths=reports/clover.xml \
+                        -Dsonar.php.tests.reportPath=reports/junit.xml
                     '''
                 }
             }
