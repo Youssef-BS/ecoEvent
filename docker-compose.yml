@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: oussemakhemiri2/ecoevent-app:latest
+    image: oussemakhemiri2//ecoevent-app:latest
     container_name: ecoevent-app
     restart: unless-stopped
     working_dir: /var/www
@@ -22,7 +22,7 @@ services:
       - db
 
   webserver:
-    image: oussemakhemiri2/nginx:alpine
+    image: nginx:alpine
     container_name: ecoevent-webserver
     restart: unless-stopped
     ports:
@@ -34,7 +34,7 @@ services:
       - app
 
   db:
-    image: oussemakhemiri2/mysql:8.0
+    image: mysql:8.0
     container_name: ecoevent-db
     restart: unless-stopped
     environment:
