@@ -96,10 +96,13 @@ pipeline {
                     sudo docker exec ecoevent-app chmod -R 775 storage/ bootstrap/cache/
                     sudo docker exec ecoevent-app chown -R www-data:www-data storage/ bootstrap/cache/
 
-                    echo "=== Generating APP_KEY if not exists ==="
+                    echo "=== Creating .env if missing ==="
+                    sudo docker exec ecoevent-app sh -c "if [ ! -f /var/www/.env ]; then cp /var/www/.env.example /var/www/.env; fi"
+
+                    echo "=== Generating APP_KEY ==="
                     sudo docker exec ecoevent-app php artisan key:generate --force
 
-                    echo "=== Clearing and caching config ==="
+                    echo "=== Caching configuration ==="
                     sudo docker exec ecoevent-app php artisan config:clear
                     sudo docker exec ecoevent-app php artisan config:cache
                     sudo docker exec ecoevent-app php artisan route:cache
