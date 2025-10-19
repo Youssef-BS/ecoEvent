@@ -1,100 +1,77 @@
 pipeline {
-    agent any
-    stages {
-        stage('Reset Permissions') {
-            steps {
-                sh '''
-                    echo "=== Nuclear permission reset ==="
-                    # Find Jenkins user ID
-                    JENKINS_UID=$(id -u jenkins 2>/dev/null || echo "1000")
-                    JENKINS_GID=$(id -g jenkins 2>/dev/null || echo "1000")
-                    echo "Jenkins UID:GID: $JENKINS_UID:$JENKINS_GID"
-                    
-                    # Reset everything to Jenkins user
-                    sudo chown -R $JENKINS_UID:$JENKINS_GID . || true
-                    sudo chown -R jenkins:jenkins . || true
-                    sudo chown -R $(whoami):$(whoami) . || true
-                    
-                    # Remove all Docker-created files
-                    sudo rm -rf bootstrap/cache/*.php 2>/dev/null || true
-                    sudo rm -rf storage/framework/* 2>/dev/null || true
-                    sudo rm -rf vendor node_modules 2>/dev/null || true
-                    
-                    # Recreate essential directories
-                    mkdir -p bootstrap/cache storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs
-                    chmod -R 775 bootstrap/cache storage
-                    chmod -R 777 storage/framework storage/logs
-                    
-                    echo "=== Workspace cleaned ==="
-                '''
-            }
-        }
-        
-        stage('Prepare Workspace') {
-            steps {
-                sh '''
-                    echo "=== Preparing workspace ==="
-                    sudo chown -R $(whoami):$(whoami) . || true
-                    sudo chmod -R 775 bootstrap/cache storage || true
-                    sudo rm -rf bootstrap/cache/* storage/framework/* 2>/dev/null || true
-                '''
-            }
-        }
+  agent any
+  options {
+    // prevents Jenkins' automatic checkout so we can prepare workspace first
+    skipDefaultCheckout()
+    // optional: limit build concurrency, timeouts, etc.
+  }
 
-        stage('GIT') {
-            steps {
-                git(
-                    branch: 'Devops',
-                    url: 'https://github.com/Youssef-BS/ecoEvent.git',
-                    credentialsId: 'github-creds'
-                )
-                sh '''
-                    git reset --hard
-                    git clean -fdx
-                '''
-            }
-        }
-        
-        stage('Set Safe Environment') {
-            steps {
-                sh '''
-                    echo "=== Setting safe environment ==="
-                    # Set the user IDs for Docker Compose
-                    export CURRENT_UID=$(id -u)
-                    export CURRENT_GID=$(id -g)
-                    echo "Using UID:GID: $CURRENT_UID:$CURRENT_GID"
-                    
-                    # Make sure we own everything
-                    chown -R $CURRENT_UID:$CURRENT_GID . 2>/dev/null || true
-                    chmod -R 755 . 2>/dev/null || true
-                '''
-            }
-        }
-        
-        stage('Build Docker Images') {
-            steps {
-                sh '''
-                    # Build with explicit user context
-                    sudo docker compose build --no-cache --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)
-                '''
-            }
-        }
-        
-        stage('Deploy with Docker Compose') {
-            steps {
-                sh '''
-                    # Stop and remove everything
-                    sudo docker compose down -v --remove-orphans
-                    
-                    # Start with explicit user
-                    export CURRENT_UID=$(id -u)
-                    export CURRENT_GID=$(id -g)
-                    sudo -E docker compose up -d
-                '''
-            }
-        }
-        
-        stage('Wait and Setup') {
+  environment {
+    GIT_URL = 'https://github.com/Youssef-BS/ecoEvent.git'
+    GIT_BRANCH = 'Devops'
+    GIT_CREDS = 'github-creds'
+  }
+
+  stages {
+    stage('Prepare workspace (force ownership + cleanup)') {
+      steps {
+        // must run on node / workspace
+        sh '''
+          echo "==> Preparing workspace (take ownership and clear Laravel caches)..."
+          # make sure jenkins user owns files so git can overwrite them
+          sudo chown -R $(whoami):$(whoami) . || true
+
+          # relax permissions so unlinking is allowed
+          sudo find . -type d -exec chmod u+rwx,go+rx {} + || true
+          sudo find . -type f -exec chmod u+rw,go+r {} + || true
+
+          # remove problematic runtime/cache directories that git might try to overwrite
+          sudo rm -rf bootstrap/cache/* 2>/dev/null || true
+          sudo rm -rf storage/framework/* 2>/dev/null || true
+          sudo rm -rf vendor node_modules 2>/dev/null || true
+
+          echo "==> workspace prepared"
+        '''
+      }
+    }
+
+    stage('Checkout source (clean)') {
+      steps {
+        // Use GitSCM with WipeWorkspace extension to be extra-safe
+        checkout([$class: 'GitSCM',
+          branches: [[name: "*/${env.GIT_BRANCH}"]],
+          doGenerateSubmoduleConfigurations: false,
+          extensions: [
+            [$class: 'WipeWorkspace'],            // ensure a fresh workspace for this checkout
+            [$class: 'CleanBeforeCheckout']       // another safety, removes untracked files if needed
+          ],
+          userRemoteConfigs: [[
+            url: env.GIT_URL,
+            credentialsId: env.GIT_CREDS
+          ]]
+        ])
+      }
+    }
+
+    // ------- your other stages below -------
+    stage('Build Docker Images') {
+      steps {
+        sh '''
+          echo "Building docker images..."
+          sudo docker compose build --no-cache --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)
+        '''
+      }
+    }
+
+    stage('Deploy with Docker Compose') {
+      steps {
+        sh '''
+          sudo docker compose down -v --remove-orphans || true
+          sudo -E docker compose up -d
+        '''
+      }
+    }
+    stage('Wait and Setup') {
             steps {
                 sh '''
                     sleep 30
@@ -116,32 +93,20 @@ pipeline {
                 }
             }
         }
-        
-        stage('Post-Build Cleanup') {
-            steps {
-                sh '''
-                    echo "=== Cleaning up for next build ==="
-                    # Stop containers
-                    sudo docker compose down
-                    
-                    # Reset permissions
-                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
-                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
-                    
-                    # Remove Docker-created files
-                    sudo rm -rf bootstrap/cache/*.php storage/framework/* 2>/dev/null || true
-                '''
-            }
-        }
+
+    // add your Wait and verify stages as before...
+  }
+
+  post {
+    always {
+      // post steps that touch the workspace must run inside a node block
+      node {
+        sh '''
+          echo "==> Post-build: reset ownership for next build"
+          sudo chown -R jenkins:jenkins . 2>/dev/null || true
+          sudo rm -rf bootstrap/cache/*.php storage/framework/* 2>/dev/null || true
+        '''
+      }
     }
-    
-    post {
-        always {
-            sh '''
-                echo "=== Final permission reset ==="
-                sudo chown -R jenkins:jenkins . 2>/dev/null || true
-                sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
-            '''
-        }
-    }
+  }
 }
