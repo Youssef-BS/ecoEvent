@@ -43,6 +43,19 @@ pipeline {
             }
         }
         
+        stage('Fix Host Permissions') {
+            steps {
+                sh '''
+                    echo "=== Setting correct permissions on host ==="
+                    sudo chown -R $USER:$USER .
+                    sudo find . -type f -exec chmod 644 {} \\;
+                    sudo find . -type d -exec chmod 755 {} \\;
+                    sudo chmod -R 775 storage bootstrap/cache
+                    sudo chmod -R 777 storage/framework storage/logs
+                '''
+            }
+        }
+
         // Your existing Docker stages
         stage('Build Docker Images') {
             steps {
@@ -88,15 +101,28 @@ pipeline {
                 '''
             }
         }
+
+        stage('Fix Container Permissions') {
+            steps {
+                sh '''
+                    echo "=== Fixing permissions inside container ==="
+                    sudo docker exec ecoevent-app sh -c "
+                        chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache &&
+                        chmod -R 775 /var/www/storage /var/www/bootstrap/cache &&
+                        chmod -R 777 /var/www/storage/framework /var/www/storage/logs
+                    "
+                '''
+            }
+        }
         
         stage('Database Setup') {
             steps {
                 sh '''
-                    echo "=== Running database migrations ==="
-                    sudo docker exec ecoevent-app php artisan migrate --force || echo "Migrations failed"
-                    
-                    echo "=== Generating application key ==="
-                    sudo docker exec ecoevent-app php artisan key:generate --force || echo "Key generation failed"
+                    echo "=== Setting up database ==="
+                    sudo docker exec ecoevent-app php artisan config:clear
+                    sudo docker exec ecoevent-app php artisan cache:clear
+                    sudo docker exec ecoevent-app php artisan key:generate --force
+                    sudo docker exec ecoevent-app php artisan migrate --force
                 '''
             }
         }
@@ -105,36 +131,29 @@ pipeline {
             steps {
                 sh '''
                     echo "=== Optimizing Laravel ==="
-                    sudo docker exec ecoevent-app php artisan config:clear || true
-                    sudo docker exec ecoevent-app php artisan cache:clear || true
-                    sudo docker exec ecoevent-app php artisan view:clear || true
-                    sudo docker exec ecoevent-app php artisan config:cache || true
-                    sudo docker exec ecoevent-app php artisan route:cache || true
-                    sudo docker exec ecoevent-app php artisan view:cache || true
+                    sudo docker exec ecoevent-app php artisan config:cache
+                    sudo docker exec ecoevent-app php artisan route:cache
+                    sudo docker exec ecoevent-app php artisan view:cache
                 '''
             }
         }
         
-        stage('Debug Application') {
+       stage('Debug Application') {
             steps {
                 sh '''
+                    echo "=== Final Permission Check ==="
+                    sudo docker exec ecoevent-app ls -la storage/ bootstrap/cache/
+                    
                     echo "=== Application Logs ==="
-                    sudo docker logs ecoevent-app --tail 50 || true
+                    sudo docker exec ecoevent-app ls -la storage/logs/
+                    sudo docker exec ecoevent-app cat storage/logs/laravel.log 2>/dev/null || echo "No log file yet"
                     
-                    echo "=== Nginx Logs ==="
-                    sudo docker logs ecoevent-webserver --tail 50 || true
-                    
-                    echo "=== Database Connection Test ==="
-                    sudo docker exec ecoevent-app php artisan tinker --execute="try { echo DB::connection()->getPdo() ? 'DB Connected' : 'DB Failed'; } catch (Exception \$e) { echo 'DB Error: ' . \$e->getMessage(); }" || true
-                    
-                    echo "=== Storage Permissions ==="
-                    sudo docker exec ecoevent-app ls -la storage/ bootstrap/cache/ || true
-                    sudo docker exec ecoevent-app chmod -R 775 storage/ bootstrap/cache/ || true
-                    sudo docker exec ecoevent-app chown -R www-data:www-data storage/ bootstrap/cache/ || true
+                    echo "=== Testing Application ==="
+                    sudo docker exec ecoevent-app php artisan route:list || true
                 '''
             }
         }
-        
+
         stage('Verify Deployment') {
             steps {
                 script {
