@@ -1,84 +1,136 @@
 pipeline {
-  agent any
-  options {
-    // prevents Jenkins' automatic checkout so we can prepare workspace first
-    skipDefaultCheckout()
-    // optional: limit build concurrency, timeouts, etc.
-  }
-
-  environment {
-    GIT_URL = 'https://github.com/Youssef-BS/ecoEvent.git'
-    GIT_BRANCH = 'Devops'
-    GIT_CREDS = 'github-creds'
-  }
-
-  stages {
-    stage('Prepare workspace (force ownership + cleanup)') {
-      steps {
-        // must run on node / workspace
-        sh '''
-          echo "==> Preparing workspace (take ownership and clear Laravel caches)..."
-          # make sure jenkins user owns files so git can overwrite them
-          sudo chown -R $(whoami):$(whoami) . || true
-
-          # relax permissions so unlinking is allowed
-          sudo find . -type d -exec chmod u+rwx,go+rx {} + || true
-          sudo find . -type f -exec chmod u+rw,go+r {} + || true
-
-          # remove problematic runtime/cache directories that git might try to overwrite
-          sudo rm -rf bootstrap/cache/* 2>/dev/null || true
-          sudo rm -rf storage/framework/* 2>/dev/null || true
-          sudo rm -rf vendor node_modules 2>/dev/null || true
-
-          echo "==> workspace prepared"
-        '''
-      }
-    }
-
-    stage('Checkout source (clean)') {
-      steps {
-        // Use GitSCM with WipeWorkspace extension to be extra-safe
-        checkout([$class: 'GitSCM',
-          branches: [[name: "*/${env.GIT_BRANCH}"]],
-          doGenerateSubmoduleConfigurations: false,
-          extensions: [
-            [$class: 'WipeWorkspace'],            // ensure a fresh workspace for this checkout
-            [$class: 'CleanBeforeCheckout']       // another safety, removes untracked files if needed
-          ],
-          userRemoteConfigs: [[
-            url: env.GIT_URL,
-            credentialsId: env.GIT_CREDS
-          ]]
-        ])
-      }
-    }
-
-    // ------- your other stages below -------
-    stage('Build Docker Images') {
-      steps {
-        sh '''
-          echo "Building docker images..."
-          sudo docker compose build --no-cache --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g)
-        '''
-      }
-    }
-
-    stage('Deploy with Docker Compose') {
-      steps {
-        sh '''
-          sudo docker compose down -v --remove-orphans || true
-          sudo -E docker compose up -d
-        '''
-      }
-    }
-    stage('Wait and Setup') {
+    agent any
+    stages {
+        stage('GIT') {
+            steps {
+                git(
+                    branch: 'Devops', 
+                    url: 'https://github.com/Youssef-BS/ecoEvent.git',
+                    credentialsId: 'github-creds'
+                )
+            }
+        }
+        
+        stage('Install PHP Dependencies') {
             steps {
                 sh '''
+                    docker run --rm -v $PWD:/app composer:2.2 install --no-dev --optimize-autoloader
+                '''
+            }
+        }
+        
+        stage('Build Frontend with Node 20') {
+            steps {
+                sh '''
+                    # Use Docker to run Node.js 20 for the build
+                    docker run --rm -v $PWD:/app -w /app node:20-alpine sh -c "npm install && npm run build"
+                '''
+            }
+        }
+        
+        stage('Run Migrations and Optimize') {
+            steps {
+                sh '''
+                    docker run --rm -v $PWD:/app -w /app php:8.2-cli sh -c "
+                        apt-get update && 
+                        apt-get install -y libzip-dev libpng-dev libonig-dev libxml2-dev &&
+                        docker-php-ext-install zip gd mbstring pdo_mysql &&
+                        php artisan config:cache &&
+                        php artisan route:cache && 
+                        php artisan view:cache
+                    "
+                '''
+            }
+        }
+        
+        // Your existing Docker stages
+        stage('Build Docker Images') {
+            steps {
+                sh 'sudo docker compose build'
+            }
+        }
+        
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKER_HUB_CREDENTIALS',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        sudo docker logout
+                        echo "${DOCKER_PASSWORD}" | sudo docker login -u "${DOCKER_USER}" --password-stdin
+                    '''
+                }
+            }
+        }
+        
+        stage('Push Docker Images') {
+            steps {
+                sh '''
+                    sudo docker compose push
+                    sudo docker logout
+                '''
+            }
+        }
+        
+        stage('Deploy with Docker Compose') {
+            steps {
+                sh 'sudo docker compose down && sudo docker compose up -d'
+            }
+        }
+        stage('Wait for Services') {
+            steps {
+                sh '''
+                    echo "Waiting for services to start..."
                     sleep 30
-                    # Run setup commands
-                    sudo docker exec ecoevent-app php artisan key:generate --force
-                    sudo docker exec ecoevent-app php artisan migrate --force
-                    sudo docker exec ecoevent-app php artisan config:cache
+                    sudo docker ps -a
+                '''
+            }
+        }
+        
+        stage('Database Setup') {
+            steps {
+                sh '''
+                    echo "=== Running database migrations ==="
+                    sudo docker exec ecoevent-app php artisan migrate --force || echo "Migrations failed"
+                    
+                    echo "=== Generating application key ==="
+                    sudo docker exec ecoevent-app php artisan key:generate --force || echo "Key generation failed"
+                '''
+            }
+        }
+        
+        stage('Laravel Optimization') {
+            steps {
+                sh '''
+                    echo "=== Optimizing Laravel ==="
+                    sudo docker exec ecoevent-app php artisan config:clear || true
+                    sudo docker exec ecoevent-app php artisan cache:clear || true
+                    sudo docker exec ecoevent-app php artisan view:clear || true
+                    sudo docker exec ecoevent-app php artisan config:cache || true
+                    sudo docker exec ecoevent-app php artisan route:cache || true
+                    sudo docker exec ecoevent-app php artisan view:cache || true
+                '''
+            }
+        }
+        
+        stage('Debug Application') {
+            steps {
+                sh '''
+                    echo "=== Application Logs ==="
+                    sudo docker logs ecoevent-app --tail 50 || true
+                    
+                    echo "=== Nginx Logs ==="
+                    sudo docker logs ecoevent-webserver --tail 50 || true
+                    
+                    echo "=== Database Connection Test ==="
+                    sudo docker exec ecoevent-app php artisan tinker --execute="try { echo DB::connection()->getPdo() ? 'DB Connected' : 'DB Failed'; } catch (Exception \$e) { echo 'DB Error: ' . \$e->getMessage(); }" || true
+                    
+                    echo "=== Storage Permissions ==="
+                    sudo docker exec ecoevent-app ls -la storage/ bootstrap/cache/ || true
+                    sudo docker exec ecoevent-app chmod -R 775 storage/ bootstrap/cache/ || true
+                    sudo docker exec ecoevent-app chown -R www-data:www-data storage/ bootstrap/cache/ || true
                 '''
             }
         }
@@ -93,20 +145,6 @@ pipeline {
                 }
             }
         }
-
-    // add your Wait and verify stages as before...
-  }
-
-  post {
-    always {
-      // post steps that touch the workspace must run inside a node block
-      node {
-        sh '''
-          echo "==> Post-build: reset ownership for next build"
-          sudo chown -R jenkins:jenkins . 2>/dev/null || true
-          sudo rm -rf bootstrap/cache/*.php storage/framework/* 2>/dev/null || true
-        '''
-      }
     }
-  }
+    
 }
