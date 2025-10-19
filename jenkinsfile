@@ -34,9 +34,9 @@ pipeline {
                     sh '''
                         echo "=== Running SonarQube analysis with Docker ==="
                         
-                        # Run sonar-scanner in Docker (similar to Maven approach)
+                        # Use host machine IP instead of localhost
                         docker run --rm \
-                        -e SONAR_HOST_URL="http://localhost:9000" \
+                        -e SONAR_HOST_URL="http://192.168.163.128:9000" \
                         -e SONAR_LOGIN=$SONAR_AUTH_TOKEN \
                         -v "$PWD:/usr/src" \
                         sonarsource/sonar-scanner-cli:latest \
