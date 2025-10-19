@@ -28,20 +28,17 @@ pipeline {
             }
         }
         
-        stage('SonarQube Analysis') {
+        stage('SONARQUBE SCAN') {
             steps {
-                withCredentials([string(credentialsId: 'SonarQube-token', variable: 'SONAR_TOKEN')]) {
-                    sh '''
-                        docker run --rm \
-                            -v $PWD:/app \
-                            -w /app \
-                            -e SONAR_TOKEN=$SONAR_TOKEN \
-                            sonarsource/sonar-scanner-cli \
-                            -Dsonar.projectKey=ecoEvent \
-                            -Dsonar.sources=./app \
-                            -Dsonar.host.url=https://sonarcloud.io
-                    '''
-                }
+                sh '''
+                    docker run --rm \
+                    -v $PWD:/app \
+                    -w /app \
+                    sonarsource/sonar-scanner-cli \
+                    -Dsonar.projectKey=ecoEvent \
+                    -Dsonar.sources=./app \
+                    -Dsonar.host.url=http://host.docker.internal:9000
+                '''
             }
         }
 
