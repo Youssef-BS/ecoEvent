@@ -7,15 +7,17 @@ use Illuminate\Database\Eloquent\Model;
 class Resource extends Model
 {
     protected $fillable = [
-        'name',
-        'description',
+        'title',
         'quantity',
+        'image',
         'sponsor_id'
     ];
 
-    public function event()
+     public function events()
     {
-        return $this->belongsTo(Event::class);
+        return $this->belongsToMany(Event::class)
+                    ->withPivot('quantity')
+                    ->withTimestamps();
     }
     public function sponsor()
     {
