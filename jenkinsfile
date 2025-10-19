@@ -32,7 +32,11 @@ pipeline {
         
         stage('GIT') {
             steps {
-                cleanWs()  // Clean workspace before checkout
+                sh '''
+                    echo "=== Forcibly cleaning workspace ==="
+                    sudo chown -R $(whoami):$(whoami) . || true
+                    sudo rm -rf bootstrap/cache/* storage/* vendor node_modules 2>/dev/null || true
+                '''
                 git(
                     branch: 'Devops', 
                     url: 'https://github.com/Youssef-BS/ecoEvent.git',
