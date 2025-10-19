@@ -11,34 +11,32 @@ pipeline {
             }
         }
         
-        stage('Install PHP Dependencies') {
+        stage('Install Node.js 20') {
             steps {
                 sh '''
-                    docker run --rm -v $PWD:/app composer:2.2 install --no-dev --optimize-autoloader
+                    sudo apt remove -y nodejs npm 2>/dev/null || true
+                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                    sudo apt install -y nodejs
                 '''
             }
         }
         
-        stage('Build Frontend with Node 20') {
+        stage('Install PHP and Composer') {
             steps {
                 sh '''
-                    # Use Docker to run Node.js 20 for the build
-                    docker run --rm -v $PWD:/app -w /app node:20-alpine sh -c "npm install && npm run build"
+                    sudo apt update
+                    sudo apt install -y php php-cli php-mysql php-zip php-gd php-mbstring php-curl php-xml php-bcmath
+                    curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
                 '''
             }
         }
         
-        stage('Run Migrations and Optimize') {
+        stage('Install Dependencies') {
             steps {
                 sh '''
-                    docker run --rm -v $PWD:/app -w /app php:8.2-cli sh -c "
-                        apt-get update && 
-                        apt-get install -y libzip-dev libpng-dev libonig-dev libxml2-dev &&
-                        docker-php-ext-install zip gd mbstring pdo_mysql &&
-                        php artisan config:cache &&
-                        php artisan route:cache && 
-                        php artisan view:cache
-                    "
+                    composer install --no-dev --optimize-autoloader
+                    npm install
+                    npm run build
                 '''
             }
         }
@@ -55,35 +53,10 @@ pipeline {
                 '''
             }
         }
-
-        // Your existing Docker stages
+        
         stage('Build Docker Images') {
             steps {
-                sh 'sudo docker compose build'
-            }
-        }
-        
-        stage('Login to Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'DOCKER_HUB_CREDENTIALS',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASSWORD'
-                )]) {
-                    sh '''
-                        sudo docker logout
-                        echo "${DOCKER_PASSWORD}" | sudo docker login -u "${DOCKER_USER}" --password-stdin
-                    '''
-                }
-            }
-        }
-        
-        stage('Push Docker Images') {
-            steps {
-                sh '''
-                    sudo docker compose push
-                    sudo docker logout
-                '''
+                sh 'sudo docker compose build --no-cache'
             }
         }
         
@@ -92,16 +65,16 @@ pipeline {
                 sh 'sudo docker compose down && sudo docker compose up -d'
             }
         }
+        
         stage('Wait for Services') {
             steps {
                 sh '''
                     echo "Waiting for services to start..."
                     sleep 30
-                    sudo docker ps -a
                 '''
             }
         }
-
+        
         stage('Fix Container Permissions') {
             steps {
                 sh '''
@@ -138,7 +111,7 @@ pipeline {
             }
         }
         
-       stage('Debug Application') {
+        stage('Debug Application') {
             steps {
                 sh '''
                     echo "=== Final Permission Check ==="
@@ -153,7 +126,7 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('Verify Deployment') {
             steps {
                 script {
