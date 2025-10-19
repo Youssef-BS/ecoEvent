@@ -9,8 +9,6 @@ services:
     container_name: ecoevent-app
     restart: unless-stopped
     working_dir: /var/www
-    # Remove the user line or set it explicitly to match Jenkins
-    user: "1000:1000"  # Jenkins typically uses UID 1000
     volumes:
       - .:/var/www
     environment:
@@ -31,8 +29,6 @@ services:
     volumes:
       - .:/var/www
       - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
-    # Add user for nginx too
-    user: "1000:1000"
     depends_on:
       - app
 
