@@ -35,8 +35,7 @@ pipeline {
                         # Run SonarScanner in Docker
                         docker run --rm -v $PWD:/app -w /app sonarsource/sonar-scanner-cli \
                         -Dsonar.projectKey=ecoEvent \
-                        -Dsonar.sources=./app \
-                        -Dsonar.login=$SONAR_AUTH_TOKEN
+                        -Dsonar.sources=./app 
                     '''
                 }
             }
