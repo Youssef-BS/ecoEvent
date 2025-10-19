@@ -1,28 +1,6 @@
 pipeline {
     agent any
     stages {
-        stage('Pre-Cleanup') {
-            steps {
-                cleanWs()
-                sh '''
-                    echo "=== Resetting workspace permissions ==="
-                    # Force reset all permissions to Jenkins user
-                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
-                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
-                    
-                    # Remove all cache and generated files
-                    sudo rm -rf bootstrap/cache/*.php 2>/dev/null || true
-                    sudo rm -rf storage/framework/* 2>/dev/null || true
-                    sudo rm -rf vendor node_modules 2>/dev/null || true
-                    
-                    # Recreate directories with proper permissions
-                    mkdir -p bootstrap/cache storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs
-                    chmod -R 775 bootstrap/cache storage
-                    chmod -R 777 storage/framework storage/logs
-                '''
-            }
-        }
-        
         stage('GIT') {
             steps {
                 git(
@@ -33,50 +11,79 @@ pipeline {
             }
         }
         
-        stage('Install Node.js 20') {
+        stage('Install PHP Dependencies') {
             steps {
                 sh '''
-                    sudo apt remove -y nodejs npm 2>/dev/null || true
-                    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-                    sudo apt install -y nodejs
+                    docker run --rm -v $PWD:/app composer:2.2 install --no-dev --optimize-autoloader
                 '''
             }
         }
         
-        stage('Install PHP and Composer') {
+        stage('Build Frontend with Node 20') {
             steps {
                 sh '''
-                    sudo apt update
-                    sudo apt install -y php php-cli php-mysql php-zip php-gd php-mbstring php-curl php-xml php-bcmath
-                    curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+                    # Use Docker to run Node.js 20 for the build
+                    docker run --rm -v $PWD:/app -w /app node:20-alpine sh -c "npm install && npm run build"
                 '''
             }
         }
         
-        stage('Set Safe Permissions') {
+        stage('Run Migrations and Optimize') {
             steps {
                 sh '''
-                    echo "=== Setting safe permissions for build ==="
-                    chmod -R 755 .
-                    chmod -R 775 storage bootstrap/cache
-                    chmod -R 777 storage/framework storage/logs
+                    docker run --rm -v $PWD:/app -w /app php:8.2-cli sh -c "
+                        apt-get update && 
+                        apt-get install -y libzip-dev libpng-dev libonig-dev libxml2-dev &&
+                        docker-php-ext-install zip gd mbstring pdo_mysql &&
+                        php artisan config:cache &&
+                        php artisan route:cache && 
+                        php artisan view:cache
+                    "
                 '''
             }
         }
         
-        stage('Install Dependencies') {
+        stage('Fix Host Permissions') {
             steps {
                 sh '''
-                    composer install --no-dev --optimize-autoloader
-                    npm install
-                    npm run build
+                    echo "=== Setting correct permissions on host ==="
+                    sudo chown -R $USER:$USER .
+                    sudo find . -type f -exec chmod 644 {} \\;
+                    sudo find . -type d -exec chmod 755 {} \\;
+                    sudo chmod -R 775 storage bootstrap/cache
+                    sudo chmod -R 777 storage/framework storage/logs
                 '''
             }
         }
-        
+
+        // Your existing Docker stages
         stage('Build Docker Images') {
             steps {
-                sh 'sudo docker compose build --no-cache'
+                sh 'sudo docker compose build'
+            }
+        }
+        
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'DOCKER_HUB_CREDENTIALS',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
+                    sh '''
+                        sudo docker logout
+                        echo "${DOCKER_PASSWORD}" | sudo docker login -u "${DOCKER_USER}" --password-stdin
+                    '''
+                }
+            }
+        }
+        
+        stage('Push Docker Images') {
+            steps {
+                sh '''
+                    sudo docker compose push
+                    sudo docker logout
+                '''
             }
         }
         
@@ -85,18 +92,45 @@ pipeline {
                 sh 'sudo docker compose down && sudo docker compose up -d'
             }
         }
-        
         stage('Wait for Services') {
             steps {
-                sh 'sleep 30'
+                sh '''
+                    echo "Waiting for services to start..."
+                    sleep 30
+                    sudo docker ps -a
+                '''
+            }
+        }
+
+        stage('Fix Container Permissions') {
+            steps {
+                sh '''
+                    echo "=== Fixing permissions inside container ==="
+                    sudo docker exec ecoevent-app sh -c "
+                        chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache &&
+                        chmod -R 775 /var/www/storage /var/www/bootstrap/cache &&
+                        chmod -R 777 /var/www/storage/framework /var/www/storage/logs
+                    "
+                '''
             }
         }
         
-        stage('Setup Application') {
+        stage('Database Setup') {
             steps {
                 sh '''
+                    echo "=== Setting up database ==="
+                    sudo docker exec ecoevent-app php artisan config:clear
+                    sudo docker exec ecoevent-app php artisan cache:clear
                     sudo docker exec ecoevent-app php artisan key:generate --force
                     sudo docker exec ecoevent-app php artisan migrate --force
+                '''
+            }
+        }
+        
+        stage('Laravel Optimization') {
+            steps {
+                sh '''
+                    echo "=== Optimizing Laravel ==="
                     sudo docker exec ecoevent-app php artisan config:cache
                     sudo docker exec ecoevent-app php artisan route:cache
                     sudo docker exec ecoevent-app php artisan view:cache
@@ -104,23 +138,24 @@ pipeline {
             }
         }
         
-        stage('Post-Deploy Cleanup') {
+       stage('Debug Application') {
             steps {
                 sh '''
-                    echo "=== Cleaning up after deployment ==="
-                    sudo docker compose down
+                    echo "=== Final Permission Check ==="
+                    sudo docker exec ecoevent-app ls -la storage/ bootstrap/cache/
                     
-                    # Reset permissions for next build
-                    sudo chown -R jenkins:jenkins . 2>/dev/null || true
-                    sudo chown -R $(whoami):$(whoami) . 2>/dev/null || true
-                    chmod -R 755 .
+                    echo "=== Application Logs ==="
+                    sudo docker exec ecoevent-app ls -la storage/logs/
+                    sudo docker exec ecoevent-app cat storage/logs/laravel.log 2>/dev/null || echo "No log file yet"
+                    
+                    echo "=== Testing Application ==="
+                    sudo docker exec ecoevent-app php artisan route:list || true
                 '''
             }
         }
-        
+
         stage('Verify Deployment') {
             steps {
-                sh 'sudo docker compose up -d'
                 script {
                     retry(5) {
                         sleep 10
@@ -130,4 +165,5 @@ pipeline {
             }
         }
     }
+    
 }
