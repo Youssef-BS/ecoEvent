@@ -9,7 +9,8 @@ class Like extends Model
 {
     protected $fillable = [
         'user_id',
-        'reaction'
+        'reaction',
+        'post_id'
     ];
 
     public function post() : BelongsTo

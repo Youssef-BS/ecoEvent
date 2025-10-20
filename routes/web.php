@@ -12,6 +12,8 @@ use App\Http\Controllers\EventResourceController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ResourceController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\LikeController;
 
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
@@ -100,6 +102,16 @@ Route::middleware(['auth'])->group(function () {
         'update' => 'post.update',
         'destroy' => 'post.delete',
     ]);
+});
+
+Route::middleware('auth')->group(function () {
+   // Comments routes
+   Route::get('/posts/{post}/comments', [CommentController::class, 'getComments'])->name('comments.getComments');
+    Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    Route::post('/posts/{post}/like', [LikeController::class, 'toggle'])->name('likes.toggle');
 });
 
 Route::get('/admin/donations', [DonationController::class, 'adminIndex'])->name('donations.adminIndex');
