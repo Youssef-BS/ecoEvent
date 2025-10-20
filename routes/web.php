@@ -116,13 +116,19 @@ Route::prefix('/events/{event}/products')->name('products.')->group(function () 
     Route::get('/', [ProductController::class, 'index'])->name('index');
     Route::get('/create', [ProductController::class, 'create'])->name('create');
     Route::post('/', [ProductController::class, 'store'])->name('store');
-
-
-
-Route::get('/{product}', [ProductController::class, 'show'])->name('show');
-
+    Route::get('/{product}', [ProductController::class, 'show'])->name('show');
     Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
     Route::put('/{product}', [ProductController::class, 'update'])->name('update');
     Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
 });
+
+Route::prefix('/admin/users')->name('users.')->group(function () {
+    Route::get('/all', [UserController::class, 'listUsers'])->name('listUsers');
+    Route::get('/create', [UserController::class, 'create'])->name('create');
+    Route::post('/', [UserController::class, 'store'])->name('store'); 
+    Route::get('/user/{id}', [UserController::class, 'showProfile'])->name('showProfile');
+    Route::put('/{user}', [UserController::class, 'edit'])->name('edit');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+});
+
 
