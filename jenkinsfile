@@ -198,7 +198,7 @@ pipeline {
             }
         }
     }
-    
+
         post {
         success {
             mail to: 'oussema2khemiri5@gmail.com',
@@ -214,13 +214,13 @@ pipeline {
                 - PHP dependencies installed
                 - Frontend (Node) built successfully
                 - SonarQube analysis passed
-                - Docker images built and pushed to Docker Hub + Nexus
+                - Docker images built and pushed to Docker Hub 
                 - Laravel app deployed via Docker Compose
                 - Metrics endpoint verified
 
                 🔗 Jenkins Build: ${env.BUILD_URL}
 
-                Your Laravel + Docker + Nexus pipeline ran successfully 🚀
+                Your Laravel + Docker  pipeline ran successfully 🚀
                 """
         }
 
