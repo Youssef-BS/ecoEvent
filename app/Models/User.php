@@ -67,7 +67,9 @@ class User extends Authenticatable
     }
 
      public function participations() {
-        return $this->belongsToMany(Event::class, 'participations');
+        return $this->belongsToMany(Event::class, 'participations', 'idUser', 'idEvent')
+            ->withPivot(['name', 'email', 'phone'])
+            ->withTimestamps();
     }
     public function notifications() {
         return $this->hasMany(Notification::class);
