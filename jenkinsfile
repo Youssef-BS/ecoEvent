@@ -112,18 +112,18 @@ pipeline {
                         echo "=== Pushing images to Nexus ==="
 
                         # Log in to Nexus
-                        echo "${NEXUS_PASS}" | sudo docker login 192.168.163.128:8083 -u "${NEXUS_USER}" --password-stdin
+                        echo "${NEXUS_PASS}" | sudo docker login 192.168.163.128:8081 -u "${NEXUS_USER}" --password-stdin
 
                         # Tag images for Nexus
-                        sudo docker tag ecoevent-app:latest 192.168.163.128:8083/ecoevent-app:latest
-                        sudo docker tag ecoevent-webserver:latest 192.168.163.128:8083/ecoevent-webserver:latest
+                        sudo docker tag ecoevent-app:latest 192.168.163.128:8081/ecoevent-app:latest
+                        sudo docker tag ecoevent-webserver:latest 192.168.163.128:8081/ecoevent-webserver:latest
 
                         # Push to Nexus
-                        sudo docker push 192.168.163.128:8083/ecoevent-app:latest
-                        sudo docker push 192.168.163.128:8083/ecoevent-webserver:latest
+                        sudo docker push 192.168.163.128:8081/ecoevent-app:latest
+                        sudo docker push 192.168.163.128:8081/ecoevent-webserver:latest
 
                         # Logout
-                        sudo docker logout 192.168.163.128:8083
+                        sudo docker logout 192.168.163.128:8081
                     '''
                 }
             }
