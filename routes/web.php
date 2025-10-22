@@ -120,86 +120,76 @@ Route::get('/{product}', [ProductController::class, 'show'])->name('show');
     Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
 });
 
-// In routes/web.php
 Route::get('/metrics', function () {
     $metrics = [];
-    
+
     // ===== SYSTEM METRICS =====
     $metrics[] = "# HELP app_uptime Application uptime seconds";
     $metrics[] = "# TYPE app_uptime gauge";
     $metrics[] = "app_uptime " . (microtime(true) - LARAVEL_START);
-    
+
     $metrics[] = "# HELP app_memory_usage Memory usage bytes";
     $metrics[] = "# TYPE app_memory_usage gauge";
     $metrics[] = "app_memory_usage " . memory_get_usage(true);
-    
+
     $metrics[] = "# HELP app_memory_peak Peak memory usage bytes";
     $metrics[] = "# TYPE app_memory_peak gauge";
     $metrics[] = "app_memory_peak " . memory_get_peak_usage(true);
-    
+
     // ===== DATABASE METRICS =====
     try {
         \Illuminate\Support\Facades\DB::select('SELECT 1');
         $db_status = 1;
-        
-        // Get table counts if possible
-        $users_count = 0;
-        $posts_count = 0;
-        try {
-            if (class_exists('App\\Models\\User')) {
-                $users_count = \App\Models\User::count();
-            }
-            if (class_exists('App\\Models\\Post')) {
-                $posts_count = \App\Models\Post::count();
-            }
-        } catch (Exception $e) {
-            // Ignore if tables don't exist
-        }
-        
+
+        $users_count = class_exists('App\\Models\\User') ? (int) \App\Models\User::count() : 0;
+        $posts_count = class_exists('App\\Models\\Post') ? (int) \App\Models\Post::count() : 0;
     } catch (Exception $e) {
         $db_status = 0;
         $users_count = 0;
         $posts_count = 0;
     }
-    
+
     $metrics[] = "# HELP app_database_status Database connection status";
     $metrics[] = "# TYPE app_database_status gauge";
     $metrics[] = "app_database_status " . $db_status;
-    
+
     $metrics[] = "# HELP app_users_total Total number of users";
     $metrics[] = "# TYPE app_users_total gauge";
     $metrics[] = "app_users_total " . $users_count;
-    
+
     $metrics[] = "# HELP app_posts_total Total number of posts";
     $metrics[] = "# TYPE app_posts_total gauge";
     $metrics[] = "app_posts_total " . $posts_count;
-    
+
     // ===== CACHE METRICS =====
-    $cache_hits = Cache::get('metrics_cache_hits', 0);
-    $cache_misses = Cache::get('metrics_cache_misses', 0);
-    
+    $cache_hits = (int) Cache::get('metrics_cache_hits', 0);
+    $cache_misses = (int) Cache::get('metrics_cache_misses', 0);
+
     $metrics[] = "# HELP app_cache_hits_total Total cache hits";
     $metrics[] = "# TYPE app_cache_hits_total counter";
     $metrics[] = "app_cache_hits_total " . $cache_hits;
-    
+
     $metrics[] = "# HELP app_cache_misses_total Total cache misses";
     $metrics[] = "# TYPE app_cache_misses_total counter";
     $metrics[] = "app_cache_misses_total " . $cache_misses;
-    
-    // Calculate cache hit rate
-    $total_requests = $cache_hits + $cache_misses;
-    $cache_hit_rate = $total_requests > 0 ? ($cache_hits / $total_requests) * 100 : 0;
-    
+
+    $total_cache_requests = $cache_hits + $cache_misses;
+    $cache_hit_rate = $total_cache_requests > 0 ? ($cache_hits / $total_cache_requests) * 100 : 0;
+
     $metrics[] = "# HELP app_cache_hit_rate Cache hit rate percentage";
     $metrics[] = "# TYPE app_cache_hit_rate gauge";
     $metrics[] = "app_cache_hit_rate " . $cache_hit_rate;
-    
+
     // ===== REQUEST METRICS =====
-    $total_requests = Cache::increment('metrics_total_requests');
+    if (!Cache::has('metrics_total_requests')) {
+        Cache::put('metrics_total_requests', 0);
+    }
+    $total_requests = (int) Cache::increment('metrics_total_requests', 1);
+
     $metrics[] = "# HELP app_http_requests_total Total HTTP requests";
     $metrics[] = "# TYPE app_http_requests_total counter";
     $metrics[] = "app_http_requests_total " . $total_requests;
-    
+
     // ===== STORAGE METRICS =====
     try {
         $storage_path = storage_path();
@@ -207,41 +197,39 @@ Route::get('/metrics', function () {
         $free_space = disk_free_space($storage_path);
         $used_space = $total_space - $free_space;
         $disk_usage_percent = ($used_space / $total_space) * 100;
-        
+
         $metrics[] = "# HELP app_disk_usage_bytes Disk usage in bytes";
         $metrics[] = "# TYPE app_disk_usage_bytes gauge";
         $metrics[] = "app_disk_usage_bytes " . $used_space;
-        
+
         $metrics[] = "# HELP app_disk_usage_percent Disk usage percentage";
         $metrics[] = "# TYPE app_disk_usage_percent gauge";
         $metrics[] = "app_disk_usage_percent " . $disk_usage_percent;
-        
     } catch (Exception $e) {
-        // Ignore disk space errors
+        // Ignore disk errors
     }
-    
-    // ===== QUEUE METRICS (if using queues) =====
+
+    // ===== QUEUE METRICS =====
     try {
-        $failed_jobs = class_exists('Illuminate\\Support\\Facades\\Queue') ? 
-            \Illuminate\Support\Facades\DB::table('failed_jobs')->count() : 0;
-        
+        $failed_jobs = class_exists('Illuminate\\Support\\Facades\\Queue') ?
+            (int) \Illuminate\Support\Facades\DB::table('failed_jobs')->count() : 0;
+
         $metrics[] = "# HELP app_queue_failed_jobs_total Total failed queue jobs";
         $metrics[] = "# TYPE app_queue_failed_jobs_total gauge";
         $metrics[] = "app_queue_failed_jobs_total " . $failed_jobs;
-        
     } catch (Exception $e) {
         // Ignore if queues aren't set up
     }
-    
+
     // ===== PHP METRICS =====
     $metrics[] = "# HELP app_php_version PHP version as metric";
     $metrics[] = "# TYPE app_php_version gauge";
     $metrics[] = "app_php_version " . str_replace('.', '', PHP_VERSION);
-    
+
     $metrics[] = "# HELP app_loaded_extensions PHP loaded extensions count";
     $metrics[] = "# TYPE app_loaded_extensions gauge";
     $metrics[] = "app_loaded_extensions " . count(get_loaded_extensions());
-    
+
     return response(implode("\n", $metrics), 200)
         ->header('Content-Type', 'text/plain');
 });
