@@ -47,8 +47,8 @@ pipeline {
 
                         # Upload to Nexus Raw repository
                         curl -v -u "${NEXUS_USER}:${NEXUS_PASS}" \
-                            --upload-file ecoevent_build_72.zip \
-                            http://192.168.163.128:8081/repository/laravel-builds/ecoevent_build_72.zip
+                        --upload-file $PWD/ecoevent_build_${BUILD_NUMBER}.zip \
+                        http://192.168.163.128:8081/repository/laravel-builds/ecoevent_build_${BUILD_NUMBER}.zip
 
 
                         echo "=== Upload complete ==="
