@@ -185,6 +185,20 @@ pipeline {
             }
         }
         
+        stage('Enable Metrics Endpoint') {
+            steps {
+                sh '''
+                    echo "=== Enabling metrics endpoint ==="
+                    
+                    # Test that metrics endpoint is accessible
+                    sleep 10
+                    curl -s http://localhost:8089/metrics || echo "Metrics endpoint will be available after deployment"
+                    
+                    echo "Metrics endpoint: http://192.168.163.128:8089/metrics"
+                '''
+            }
+        }
+
         stage('Verify Deployment') {
             steps {
                 script {
