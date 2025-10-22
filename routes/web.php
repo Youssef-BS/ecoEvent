@@ -143,6 +143,8 @@ Route::get('/metrics', function () {
 
         $users_count = class_exists('App\\Models\\User') ? (int) \App\Models\User::count() : 0;
         $posts_count = class_exists('App\\Models\\Post') ? (int) \App\Models\Post::count() : 0;
+        $donations_count = class_exists('App\\Models\\Donation') ? (int) \App\Models\Donation::count() : 0;
+        $events_count = class_exists('App\\Models\\Event') ? (int) \App\Models\Event::count() : 0;
     } catch (Exception $e) {
         $db_status = 0;
         $users_count = 0;
@@ -160,6 +162,14 @@ Route::get('/metrics', function () {
     $metrics[] = "# HELP app_posts_total Total number of posts";
     $metrics[] = "# TYPE app_posts_total gauge";
     $metrics[] = "app_posts_total " . $posts_count;
+
+    $metrics[] = "# HELP app_donations_total Total number of donations";
+    $metrics[] = "# TYPE app_donations_total gauge";
+    $metrics[] = "app_donations_total " . $donations_count;
+
+    $metrics[] = "# HELP app_events_total Total number of events";
+    $metrics[] = "# TYPE app_events_total gauge";
+    $metrics[] = "app_events_total " . $events_count;
 
     // ===== CACHE METRICS =====
     $cache_hits = (int) Cache::get('metrics_cache_hits', 0);
@@ -190,25 +200,6 @@ Route::get('/metrics', function () {
     $metrics[] = "# TYPE app_http_requests_total counter";
     $metrics[] = "app_http_requests_total " . $total_requests;
 
-    // ===== STORAGE METRICS =====
-    try {
-        $storage_path = storage_path();
-        $total_space = disk_total_space($storage_path);
-        $free_space = disk_free_space($storage_path);
-        $used_space = $total_space - $free_space;
-        $disk_usage_percent = ($used_space / $total_space) * 100;
-
-        $metrics[] = "# HELP app_disk_usage_bytes Disk usage in bytes";
-        $metrics[] = "# TYPE app_disk_usage_bytes gauge";
-        $metrics[] = "app_disk_usage_bytes " . $used_space;
-
-        $metrics[] = "# HELP app_disk_usage_percent Disk usage percentage";
-        $metrics[] = "# TYPE app_disk_usage_percent gauge";
-        $metrics[] = "app_disk_usage_percent " . $disk_usage_percent;
-    } catch (Exception $e) {
-        // Ignore disk errors
-    }
-
     // ===== QUEUE METRICS =====
     try {
         $failed_jobs = class_exists('Illuminate\\Support\\Facades\\Queue') ?
@@ -222,10 +213,6 @@ Route::get('/metrics', function () {
     }
 
     // ===== PHP METRICS =====
-    $metrics[] = "# HELP app_php_version PHP version as metric";
-    $metrics[] = "# TYPE app_php_version gauge";
-    $metrics[] = "app_php_version " . str_replace('.', '', PHP_VERSION);
-
     $metrics[] = "# HELP app_loaded_extensions PHP loaded extensions count";
     $metrics[] = "# TYPE app_loaded_extensions gauge";
     $metrics[] = "app_loaded_extensions " . count(get_loaded_extensions());
