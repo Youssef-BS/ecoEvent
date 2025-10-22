@@ -6,6 +6,8 @@ use App\Models\Complaint;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Mail\ComplaintReplyMail;
+use Illuminate\Support\Facades\Mail;
 
 class ComplaintController extends Controller
 {
@@ -102,7 +104,13 @@ class ComplaintController extends Controller
         $complaint->status = 1; // Mark as addressed
         $complaint->save();
 
-        return redirect()->back()->with('success', 'Reply sent successfully');
+        // Send email to the user who created the complaint
+        $user = $complaint->user; // assuming Complaint belongsTo User
+        if ($user && $user->email) {
+            Mail::to($user->email)->send(new ComplaintReplyMail($complaint->reply, $user->name));
+        }
+
+        return redirect()->back()->with('success', 'Reply sent successfully and email delivered.');
     }
     // Delete complaint
     public function destroy($id)
