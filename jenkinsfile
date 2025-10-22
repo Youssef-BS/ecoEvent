@@ -19,7 +19,7 @@ pipeline {
             }
         }
         
-        stage('Build Frontend with Node 20') {
+        stage('Frontend Application') {
             steps {
                 sh '''
                     # Use Docker to run Node.js 20 for the build
@@ -168,14 +168,6 @@ pipeline {
         stage('Debug Application') {
             steps {
                 sh '''
-                    echo "=== Application Logs ==="
-                    sudo docker logs ecoevent-app --tail 50 || true
-                    
-                    echo "=== Nginx Logs ==="
-                    sudo docker logs ecoevent-webserver --tail 50 || true
-                    
-                    echo "=== Database Connection Test ==="
-                    sudo docker exec ecoevent-app php artisan tinker --execute="try { echo DB::connection()->getPdo() ? 'DB Connected' : 'DB Failed'; } catch (Exception \$e) { echo 'DB Error: ' . \$e->getMessage(); }" || true
                     
                     echo "=== Storage Permissions ==="
                     sudo docker exec ecoevent-app ls -la storage/ bootstrap/cache/ || true
@@ -184,17 +176,13 @@ pipeline {
                 '''
             }
         }
-        
-        stage('Enable Metrics Endpoint') {
+
+        stage('Test Metrics Endpoint') {
             steps {
                 sh '''
-                    echo "=== Enabling metrics endpoint ==="
-                    
                     # Test that metrics endpoint is accessible
                     sleep 10
                     curl -s http://localhost:8089/metrics || echo "Metrics endpoint will be available after deployment"
-                    
-                    echo "Metrics endpoint: http://192.168.163.128:8089/metrics"
                 '''
             }
         }
@@ -210,5 +198,56 @@ pipeline {
             }
         }
     }
+    
+        post {
+        success {
+            mail to: 'oussema2khemiri5@gmail.com',
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully",
+                body: """
+                🎉 Deployment Successful!
+
+                ✅ Job Name: ${env.JOB_NAME}
+                ✅ Build Number: #${env.BUILD_NUMBER}
+                🕒 Duration: ${currentBuild.durationString}
+
+                💬 Summary:
+                - PHP dependencies installed
+                - Frontend (Node) built successfully
+                - SonarQube analysis passed
+                - Docker images built and pushed to Docker Hub + Nexus
+                - Laravel app deployed via Docker Compose
+                - Metrics endpoint verified
+
+                🔗 Jenkins Build: ${env.BUILD_URL}
+
+                Your Laravel + Docker + Nexus pipeline ran successfully 🚀
+                """
+        }
+
+        failure {
+            mail to: 'oussema2khemiri5@gmail.com',
+                subject: "❌ FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER} failed",
+                body: """
+                ⚠️ Deployment Failed!
+
+                ❌ Job Name: ${env.JOB_NAME}
+                ❌ Build Number: #${env.BUILD_NUMBER}
+                🕒 Duration: ${currentBuild.durationString}
+
+                💥 The pipeline encountered an error during execution.
+
+                Please check:
+                - Jenkins console logs for the failing stage
+                - SonarQube analysis results
+                - Docker build/push logs
+                - Laravel container setup (migrations, permissions, .env)
+
+                🔗 Jenkins Build: ${env.BUILD_URL}
+
+                Immediate action recommended 🧠
+                """
+        }
+    }
+
     
 }
