@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Routing\Route;
+
 Route::get('/metrics', function () {
     $metrics = [];
     
