@@ -27,6 +27,35 @@ pipeline {
                 '''
             }
         }
+
+        stage('Upload Laravel Build to Nexus') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'NEXUS_CREDENTIALS',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+
+                        # Clean previous archives
+                        rm -f ecoevent_build_*.zip
+                        echo "=== Creating build artifact ==="
+                        # Create a zip of Laravel backend + built frontend
+                        zip -r ecoevent_build_${BUILD_NUMBER}.zip app/ bootstrap/ config/ database/ public/ resources/ routes/ artisan composer.json package.json
+
+                        echo "=== Uploading build artifact to Nexus ==="
+
+                        # Upload to Nexus Raw repository
+                        curl -v -u "${NEXUS_USER}:${NEXUS_PASS}" \
+                            --upload-file ecoevent_build_${BUILD_NUMBER}.zip \
+                            http://192.168.163.128:8081/repository/laravel-builds/ecoevent_build_${BUILD_NUMBER}.zip
+
+                        echo "=== Upload complete ==="
+                    '''
+                }
+            }
+        }
+
         
         stage('SonarQube Analysis') {
             steps {
@@ -101,35 +130,7 @@ pipeline {
             }
         }
 
-        stage('Push Docker Images to Nexus') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'NEXUS_CREDENTIALS',
-                    usernameVariable: 'NEXUS_USER',
-                    passwordVariable: 'NEXUS_PASS'
-                )]) {
-                    sh '''
-                        echo "=== Pushing images to Nexus ==="
 
-                        # Log in to Nexus
-                        echo "${NEXUS_PASS}" | sudo docker login 192.168.163.128:8081 -u "${NEXUS_USER}" --password-stdin
-
-                        # Tag images for Nexus
-                        sudo docker tag ecoevent-app:latest 192.168.163.128:8081/ecoevent-app:latest
-                        sudo docker tag ecoevent-webserver:latest 192.168.163.128:8081/ecoevent-webserver:latest
-
-                        # Push to Nexus
-                        sudo docker push 192.168.163.128:8081/ecoevent-app:latest
-                        sudo docker push 192.168.163.128:8081/ecoevent-webserver:latest
-
-                        # Logout
-                        sudo docker logout 192.168.163.128:8081
-                    '''
-                }
-            }
-        }
-
-        
         stage('Deploy with Docker Compose') {
             steps {
                 sh 'sudo docker compose down && sudo docker compose up -d'
