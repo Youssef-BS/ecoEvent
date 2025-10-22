@@ -1,8 +1,35 @@
-@extends('layouts.app')
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-@section('content')
+
+@include('client.layouts.navbar')
+<head>
+    <meta charset="utf-8">
+    <title>Event Details - Charitize</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+
+    <link href="{{ asset('img/favicon.ico') }}" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@600;700&family=Open+Sans&display=swap"
+        rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="{{ asset('lib/animate/animate.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('lib/owlcarousel/assets/owl.carousel.min.css') }}" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="{{ asset('css/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+</head>
+
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
@@ -20,6 +47,14 @@
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle me-2"></i>
                     {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    {{ session('error') }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
@@ -45,8 +80,8 @@
                                         <div id="productCarousel{{ $product->id }}" class="carousel slide" data-bs-ride="carousel">
                                             <div class="carousel-inner">
                                                 @foreach($product->images as $index => $image)
-                                                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                                        <img src="{{ asset('storage/' . $image->path) }}" 
+                                                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}"> 
+                                                         <img src="{{ Storage::url($image->path) }}"
                                                              class="d-block w-100" 
                                                              alt="{{ $product->name }}"
                                                              style="height: 200px; object-fit: cover;">
@@ -77,7 +112,9 @@
                                 </div>
                                 
                                 <div class="card-body">
-                                    <h5 class="card-title fw-bold text-truncate">{{ $product->name }}</h5>
+                                    <a href="{{ route('products.show', [$event, $product]) }}" class="text-decoration-none">
+    <h5 class="card-title">{{ $product->name }}</h5>
+</a>
                                     <p class="card-text text-muted small line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                         {{ $product->description ?: 'No description available' }}
                                     </p>
@@ -87,10 +124,17 @@
                                             <span class="h5 text-primary mb-0">${{ number_format($product->price, 2) }}</span>
                                         </div>
                                         <div class="btn-group">
-                                            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="tooltip" title="Edit">
+                                            <a href="{{ route('products.edit', ['event' => $event->id, 'product' => $product->id]) }}" 
+                                               class="btn btn-outline-primary btn-sm" 
+                                               data-bs-toggle="tooltip" 
+                                               title="Edit">
                                                 <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="tooltip" title="Delete">
+                                            </a>
+                                            <button class="btn btn-outline-danger btn-sm delete-product" 
+                                                    data-bs-toggle="tooltip" 
+                                                    title="Delete"
+                                                    data-product-id="{{ $product->id }}"
+                                                    data-product-name="{{ $product->name }}">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>
@@ -113,7 +157,32 @@
         </div>
     </div>
 </div>
-@endsection
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteProductModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="productNameToDelete"></strong>?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteProductForm" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Delete Product</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+@include('client.layouts.footer')
+
 
 @push('styles')
 <style>
@@ -155,11 +224,33 @@
 
 @push('scripts')
 <script>
-    // Initialize Bootstrap tooltips
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Delete product functionality
+        const deleteButtons = document.querySelectorAll('.delete-product');
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteProductModal'));
+        const productNameElement = document.getElementById('productNameToDelete');
+        const deleteForm = document.getElementById('deleteProductForm');
+
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                const productName = this.getAttribute('data-product-name');
+                
+                // Set the product name in the modal
+                productNameElement.textContent = productName;
+                
+                // Set the form action - adjust this based on your actual delete route
+                deleteForm.action = `/admin/events/{{ $event->id }}/products/${productId}`;
+                
+                // Show the modal
+                deleteModal.show();
+            });
         });
     });
 </script>

@@ -3,33 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\Event;
+use App\Models\Resource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class EventController extends Controller
 {
-    /**
-     * Display a listing of the events for all users.
-     */
+
     public function index()
     {
-        // Show 6 events per page with numbered pagination (Prev/Next + numbers)
         $events = Event::with('user')->latest('date')->paginate(6);
         return view('client.event', compact('events'));
     }
 
-    /**
-     * Show the form for creating a new event.
-     */
+
     public function create()
     {
         $this->authorizeAction();
         return view('events.create');
     }
 
-    /**
-     * Store a newly created event in storage.
-     */
+
     public function store(Request $request)
     {
         $this->authorizeAction();
@@ -50,7 +44,7 @@ class EventController extends Controller
 
         $path = null;
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('events', 'public'); 
+            $path = $request->file('image')->store('events', 'public');
         }
 
         $event = Event::create([
@@ -63,30 +57,25 @@ class EventController extends Controller
             'location' => $validated['location'] ?? null,
             'price' => $validated['price'] ?? 0,
         ]);
-
-        return redirect()->route('events.show', $event)->with('success', 'Event created successfully.');
+        return redirect()
+            ->route('events.resources.edit', $event->id)
+            ->with('success', 'Événement créé avec succès ! Sélectionnez maintenant les ressources.');
     }
 
-    /**
-     * Display the specified resource.
-     */
+
     public function show(Event $event)
     {
         return view('events.show', compact('event'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+
     public function edit(Event $event)
     {
         $this->authorizeOwner($event);
         return view('events.edit', compact('event'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(Request $request, Event $event)
     {
         $this->authorizeOwner($event);
@@ -115,9 +104,7 @@ class EventController extends Controller
         return redirect()->route('events.show', $event)->with('success', 'Event updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(Event $event)
     {
         $this->authorizeOwner($event);
@@ -137,5 +124,21 @@ class EventController extends Controller
         if (!Auth::check() || Auth::id() !== (int) $event->user_id) {
             abort(403);
         }
+    }
+
+
+    public function attachResources(Request $request, Event $event)
+    {
+        $resourceIds = $request->input('resource_ids', []);
+
+        // Mettre à jour event_id des ressources sélectionnées
+        Resource::whereIn('id', $resourceIds)->update(['event_id' => $event->id]);
+
+        // Supprimer le lien pour les ressources décochées
+        Resource::where('event_id', $event->id)
+            ->whereNotIn('id', $resourceIds)
+            ->update(['event_id' => null]);
+
+        return redirect()->route('events.index')->with('success', 'Resources attached successfully.');
     }
 }

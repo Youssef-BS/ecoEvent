@@ -6,6 +6,20 @@
       0 => 'Laravel\\Breeze\\BreezeServiceProvider',
     ),
   ),
+  'laravel/fortify' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Laravel\\Fortify\\FortifyServiceProvider',
+    ),
+  ),
+  'laravel/jetstream' => 
+  array (
+    'providers' => 
+    array (
+      0 => 'Laravel\\Jetstream\\JetstreamServiceProvider',
+    ),
+  ),
   'laravel/pail' => 
   array (
     'providers' => 
