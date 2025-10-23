@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\User;
 use App\Models\Messagerie;
 use App\Models\Notification;
@@ -31,11 +29,11 @@ class MessagerieController extends Controller
             ->get();
 
         // Group by conversation partner and get the latest message for each conversation
-        $conversations = $allMessages->groupBy(function ($message) use ($user) {
+        $conversations = $allMessages->groupBy(function($message) use ($user) {
             return $message->sender_id === $user->getAuthIdentifier()
                 ? $message->receiver_id
                 : $message->sender_id;
-        })->map(function ($messages) {
+        })->map(function($messages) {
             // Get the latest message for this conversation
             return $messages->sortByDesc('sent_at')->first();
         })->sortByDesc('sent_at'); // Sort conversations by latest message
@@ -69,11 +67,11 @@ class MessagerieController extends Controller
             ->get();
 
         // Group by conversation partner and get the latest message for each conversation
-        $conversations = $allMessages->groupBy(function ($message) use ($user) {
+        $conversations = $allMessages->groupBy(function($message) use ($user) {
             return $message->sender_id === $user->id
                 ? $message->receiver_id
                 : $message->sender_id;
-        })->map(function ($messages) use ($user) {
+        })->map(function($messages) use ($user) {
             // Get the latest message for this conversation
             $latestMessage = $messages->first(); // Already sorted by sent_at desc
 
@@ -122,10 +120,10 @@ class MessagerieController extends Controller
         }
         $user = Auth::user();
         $otherUser = User::findOrFail($userId);
-        $messages = Messagerie::where(function ($query) use ($user, $userId) {
+        $messages = Messagerie::where(function($query) use ($user, $userId) {
             $query->where('sender_id', $user->getAuthIdentifier())
                 ->where('receiver_id', $userId);
-        })->orWhere(function ($query) use ($user, $userId) {
+        })->orWhere(function($query) use ($user, $userId) {
             $query->where('sender_id', $userId)
                 ->where('receiver_id', $user->getAuthIdentifier());
         })->orderBy('sent_at', 'asc')->get();
@@ -138,8 +136,6 @@ class MessagerieController extends Controller
 
         return view('client.messagerie.show', compact('messages', 'otherUser'));
     }
-
-    // Replace your store() method in MessagerieController with this:
 
     public function store(Request $request)
     {

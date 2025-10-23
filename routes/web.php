@@ -113,7 +113,6 @@ Route::middleware('auth')->group(function () {
     });
 });
 
-
 Route::middleware(['auth'])->group(function () {
     Route::resource('posts', PostController::class)->names([
         'index' => 'post.all',
