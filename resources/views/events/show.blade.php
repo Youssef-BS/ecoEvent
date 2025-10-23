@@ -122,15 +122,15 @@
                 <h2 class="mb-0">{{ $event->title }}</h2>
                 <div>
                     @auth
-                        @if (auth()->id() === (int) $event->user_id)
-                            <a href="{{ route('events.edit', $event) }}" class="btn btn-warning py-1 px-3">Edit</a>
-                            <form action="{{ route('events.destroy', $event) }}" method="POST" class="d-inline"
-                                onsubmit="return confirm('Delete this event?')">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-danger py-1 px-3" type="submit">Delete</button>
-                            </form>
-                        @endif
+                    @if (auth()->id() === (int) $event->user_id)
+                    <a href="{{ route('events.edit', $event) }}" class="btn btn-warning py-1 px-3">Edit</a>
+                    <form action="{{ route('events.destroy', $event) }}" method="POST" class="d-inline"
+                        onsubmit="return confirm('Delete this event?')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-danger py-1 px-3" type="submit">Delete</button>
+                    </form>
+                    @endif
                     @endauth
                     <a href="{{ route('event') }}" class="btn btn-secondary py-1 px-3">All events</a>
                 </div>
@@ -138,9 +138,9 @@
 
             <div class="row g-4 align-items-start">
                 <div class="col-md-6">
-                    @if ($event->has_image)
-                        <img src="{{ $event->image_url }}" alt="{{ $event->title }}"
-                            class="img-fluid w-100 rounded mb-3">
+                    @if ($event->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($event->image))
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($event->image) }}"
+                        alt="{{ $event->title }}" class="img-fluid w-100 rounded mb-3">
                     @endif
                 </div>
                 <div class="col-md-6">
@@ -169,108 +169,14 @@
                         {{ $event->description }}
                     </p>
                     <p class="text-muted mb-0">Created by: {{ $event->user?->first_name }}
-                        {{ $event->user?->last_name }}</p>
-
-                    @auth
-                        @php
-                            $alreadyJoined = $event
-                                ->participants()
-                                ->where('users.id', auth()->id())
-                                ->exists();
-                        @endphp
-                        <div class="mt-3 d-flex gap-2">
-                            @if (!$alreadyJoined)
-                                <button class="btn btn-primary" data-bs-toggle="modal"
-                                    data-bs-target="#registerModal">Register</button>
-                            @else
-                                <form action="{{ route('participations.destroy', $event) }}" method="POST"
-                                    onsubmit="return confirm('Unregister from this event?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-outline-danger" type="submit">Unregister</button>
-                                </form>
-                            @endif
-                        </div>
-                    @else
-                        <a class="btn btn-primary mt-3" href="{{ route('login') }}">Login to Register</a>
-                    @endauth
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @auth
-        <!-- Register Modal -->
-        <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="registerModalLabel">Register to {{ $event->title }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <form action="{{ route('participations.store', $event) }}" method="POST">
-                        @csrf
-                        <div class="modal-body">
-                            @if (session('success'))
-                                <div class="alert alert-success">{{ session('success') }}</div>
-                            @endif
-                            @if (session('error'))
-                                <div class="alert alert-danger">{{ session('error') }}</div>
-                            @endif
-                            @if ($errors->any())
-                                <div class="alert alert-danger">
-                                    <ul class="mb-0 small">
-                                        @foreach ($errors->all() as $err)
-                                            <li>{{ $err }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            @endif
-                            <div class="mb-3">
-                                <label class="form-label">Full name</label>
-                                <input type="text" name="name" class="form-control"
-                                    value="{{ old('name', auth()->user()->first_name . ' ' . auth()->user()->last_name) }}"
-                                    required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Email</label>
-                                <input type="email" name="email" class="form-control"
-                                    value="{{ old('email', auth()->user()->email) }}" required>
-                            </div>
-                            <div class="mb-0">
-                                <label class="form-label">Phone (optional)</label>
-                                <input type="text" name="phone" class="form-control"
-                                    value="{{ old('phone', auth()->user()->phone) }}">
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endauth
-
-    <!-- Reviews Section -->
-    <div class="container pb-5">
-        <div class="bg-white shadow-sm reviews-card">
-            <div class="p-4 d-flex justify-content-between align-items-center reviews-header">
-                <h3 class="h4 mb-0">Reviews</h3>
-                @php $reviewsCount = $event->reviews->count(); @endphp
-                <div class="d-flex align-items-center gap-2">
-                    @if (!is_null($averageRating))
-                        <span class="rating-pill">{{ $averageRating }} / 5</span>
-                        <span class="text-warning">
-                            @for ($s = 1; $s <= 5; $s++)
-                                <i class="fa fa-star{{ $s <= round($averageRating) ? '' : '-o' }}"></i>
-                            @endfor
-                        </span>
-                    @endif
-                    <span class="text-muted small">{{ $reviewsCount }} review{{ $reviewsCount == 1 ? '' : 's' }}</span>
+                        {{ $event->user?->last_name }}
+                    </p>
                 </div>
 
+                <!-- Bouton pour ouvrir la modal -->
+                <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                    Give Feedback on Resources
+                </button>
 
             </div>
 
@@ -401,9 +307,9 @@
                 @endforelse
             </div>
         </div>
-            <a href="{{ route('products.index', $event) }}" class="btn btn-primary mt-2 text-secondary rouded-3">
-    View Products for sale for this event
-</a>
+        <a href="{{ route('products.index', $event) }}" class="btn btn-primary mt-2 text-secondary rouded-3">
+            View Products for sale for this event
+        </a>
     </div>
 
 
@@ -422,6 +328,99 @@
     <script src="{{ asset('lib/counterup/counterup.min.js') }}"></script>
     <!-- Template Javascript -->
     <script src="{{ asset('js/main.js') }}"></script>
+    <!-- Feedback Modal -->
+    <!-- Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ route('feedbacks.store') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="feedbackModalLabel">Resources & Feedback</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        @if($event->resources->count() > 0)
+                        <div class="row g-4">
+                            @foreach($event->resources as $resource)
+                            <div class="col-md-4 text-center">
+                                <div class="card shadow-sm border-0">
+                                    @if ($resource->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($resource->image))
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($resource->image) }}"
+                                        alt="{{ $resource->name }}"
+                                        class="card-img-top rounded-top"
+                                        style="height: 150px; object-fit: cover;">
+                                    @else
+                                    <img src="{{ asset('img/default-resource.jpg') }}"
+                                        alt="No image"
+                                        class="card-img-top rounded-top"
+                                        style="height: 150px; object-fit: cover;">
+                                    @endif
+
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ $resource->name }}</h6>
+                                        <p class="text-muted mb-1">Sponsor: <strong>{{ $resource->sponsor->name }}</strong></p>
+
+                                        <div class="star-rating mb-2" data-resource="{{ $resource->id }}">
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                <i class="fa-regular fa-star" data-value="{{ $i }}"></i>
+                                                @endfor
+                                        </div>
+
+                                        <input type="hidden" name="ratings[{{ $resource->id }}]" value="0">
+                                        <input type="hidden" name="sponsor_ids[{{ $resource->id }}]" value="{{ $resource->sponsor->id }}">
+                                        <input type="hidden" name="resource_ids[]" value="{{ $resource->id }}">
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-4">
+                            <label for="comment" class="form-label">Global Comment</label>
+                            <textarea name="comment" id="comment" rows="3" class="form-control"></textarea>
+                        </div>
+                        @else
+                        <p>No resources associated with this event.</p>
+                        @endif
+                        <input type="hidden" name="event_id" value="{{ $event->id }}">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.star-rating').forEach(container => {
+                const stars = container.querySelectorAll('.fa-star');
+                const input = container.nextElementSibling; // le input hidden correspondant
+                stars.forEach(star => {
+                    star.addEventListener('click', () => {
+                        const rating = star.getAttribute('data-value');
+                        input.value = rating;
+
+                        stars.forEach(s => {
+                            s.classList.remove('fa-solid', 'text-warning');
+                            s.classList.add('fa-regular');
+                        });
+
+                        for (let i = 0; i < rating; i++) {
+                            stars[i].classList.remove('fa-regular');
+                            stars[i].classList.add('fa-solid', 'text-warning');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
 </body>
 
 </html>
