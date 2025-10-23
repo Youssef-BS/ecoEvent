@@ -62,13 +62,13 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
                 @if ($errors->any())
-                    <div class="alert alert-danger">
-                        <ul class="mb-0">
-                            @foreach ($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
                 @endif
 
                 <div class="event-item p-4">
@@ -85,10 +85,10 @@
                             <select name="categories" class="form-select" required>
                                 <option value="" disabled selected>Select a category</option>
                                 @foreach (config('events.categories') as $cat)
-                                    <option value="{{ $cat }}"
-                                        {{ old('categories') === $cat ? 'selected' : '' }}>
-                                        {{ $cat }}
-                                    </option>
+                                <option value="{{ $cat }}"
+                                    {{ old('categories') === $cat ? 'selected' : '' }}>
+                                    {{ $cat }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
@@ -106,10 +106,10 @@
                             <select name="location" class="form-select">
                                 <option value="" selected>Select a governorate</option>
                                 @foreach (config('events.governorates') as $gov)
-                                    <option value="{{ $gov }}"
-                                        {{ old('location') === $gov ? 'selected' : '' }}>
-                                        {{ $gov }}
-                                    </option>
+                                <option value="{{ $gov }}"
+                                    {{ old('location') === $gov ? 'selected' : '' }}>
+                                    {{ $gov }}
+                                </option>
                                 @endforeach
                             </select>
                         </div>
@@ -127,6 +127,7 @@
                             <button type="submit" class="btn btn-primary py-2 px-4">Create Event</button>
                         </div>
                     </form>
+           
                 </div>
             </div>
         </div>

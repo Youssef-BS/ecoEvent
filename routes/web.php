@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PostController;
@@ -9,18 +10,15 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SponsorController;
 use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventResourceController;
+use App\Http\Controllers\FaceLoginController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
 
 use App\Http\Controllers\ParticipationController;
 
 use App\Http\Controllers\ResourceController;
-use App\Http\Controllers\CommentController;
-use App\Http\Controllers\LikeController;
-use App\Http\Controllers\ComplaintController;
-
-
-
+use App\Http\Controllers\SponsorMetricsController;
 
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
@@ -46,11 +44,9 @@ Route::get('/profile', [UserController::class, 'showProfile'])
     ->middleware('auth')
     ->name('profile.show');
 
-Route::get('/admin', function () {
-    return view('admin.layouts.dashboard');
-})->middleware(['auth'])->name('admin.dashboard');
-
-
+Route::get('/admin', [DashboardController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('admin.dashboard');
 // Event CRUD (auth required for create/edit/delete)
 Route::middleware('auth')->group(function () {
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
@@ -85,9 +81,11 @@ Route::get('/sponsors/{sponsor}', [SponsorController::class, 'show'])->name('spo
 Route::get('/sponsors/{sponsor}/edit', [SponsorController::class, 'edit'])->name('sponsors.edit');
 Route::put('/sponsors/{sponsor}', [SponsorController::class, 'update'])->name('sponsors.update');
 Route::delete('/sponsors/{sponsor}', [SponsorController::class, 'destroy'])->name('sponsors.destroy');
+Route::post('/feedbacks', [FeedbackController::class, 'store'])->name('feedbacks.store');
 
 
 Route::resource('resources', ResourceController::class);
+
 Route::middleware('auth')->group(function () {
     // Messages
     Route::get('/messagerie', [MessagerieController::class, 'index'])->name('messagerie.index');
@@ -112,7 +110,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('posts', PostController::class)->names([
         'index' => 'post.all',
         'show'  => 'post.view',
-        'create'=> 'post.new',
+        'create' => 'post.new',
         'store' => 'post.store',
         'edit'  => 'post.edit',
         'update' => 'post.update',
@@ -154,29 +152,19 @@ Route::prefix('/events/{event}/products')->name('products.')->group(function () 
     Route::get('/', [ProductController::class, 'index'])->name('index');
     Route::get('/create', [ProductController::class, 'create'])->name('create');
     Route::post('/', [ProductController::class, 'store'])->name('store');
+
+
+
     Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+
     Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
     Route::put('/{product}', [ProductController::class, 'update'])->name('update');
     Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
 });
 
-Route::prefix('/admin/users')->name('users.')->group(function () {
-    Route::get('/all', [UserController::class, 'listUsers'])->name('listUsers');
-    Route::get('/create', [UserController::class, 'create'])->name('create');
-    Route::post('/', [UserController::class, 'store'])->name('store'); 
-    Route::get('/user/{id}', [UserController::class, 'showProfile'])->name('showProfile');
-    Route::put('/{user}', [UserController::class, 'edit'])->name('edit');
-    Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
-});
+
+Route::get('/login/face', [FaceLoginController::class, 'loginWithFace']);
 
 
-
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
-});
+Route::get('/sponsors/update-metrics', [SponsorMetricsController::class, 'updateAll']);
+Route::get('/sponsors/metrics', [SponsorMetricsController::class, 'getMetrics']);

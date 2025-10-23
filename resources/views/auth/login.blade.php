@@ -64,7 +64,11 @@
                 </div>
 
                 <input type="submit" value="Login">
-
+                <div class="face-login">
+                    <a href="{{ url('/login/face') }}" class="btn btn-secondary" style="margin-top: 20px;">
+                        Login with Face
+                    </a>
+                </div>
                 <div class="links">
                     <p>Don't have an account? <a href="{{ route('register') }}">Join Our Cause</a></p>
                 </div>
@@ -84,17 +88,7 @@
         </div>
     </div>
 
-    <script>
-        // Password visibility toggle
-        const password = document.getElementById('password');
-        const togglePassword = document.getElementById('togglePassword');
 
-        togglePassword.addEventListener('click', () => {
-            const type = password.type === 'password' ? 'text' : 'password';
-            password.type = type;
-            togglePassword.classList.toggle('fa-eye-slash');
-        });
-    </script>
 </body>
 
 <style>
