@@ -21,20 +21,20 @@
 
             {{-- Show status messages (password reset success, etc.) --}}
             @if (session('status'))
-                <div class="mb-4 font-medium text-sm text-green-600">
-                    {{ session('status') }}
-                </div>
+            <div class="mb-4 font-medium text-sm text-green-600">
+                {{ session('status') }}
+            </div>
             @endif
 
             {{-- Show validation errors --}}
             @if ($errors->any())
-                <div class="mb-4">
-                    <ul class="text-sm text-red-600 list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="mb-4">
+                <ul class="text-sm text-red-600 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
 
             <form method="POST" action="{{ route('login') }}">
@@ -59,16 +59,28 @@
                     </label>
 
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}">Forgot Password?</a>
+                    <a href="{{ route('password.request') }}">Forgot Password?</a>
                     @endif
                 </div>
 
                 <input type="submit" value="Login">
-                <div class="face-login">
-                    <a href="{{ url('/login/face') }}" class="btn btn-secondary" style="margin-top: 20px;">
-                        Login with Face
-                    </a>
-                </div>
+                <ul style="list-style: none; padding: 0; text-align: center; margin-top: 20px;">
+                    <li style="display: inline-block; margin: 0;">
+                        <a href="{{ url('/login/face') }}"
+                            style="display: inline-block;
+                  padding: 10px 20px;
+                  background: linear-gradient(rgba(58, 99, 81, 0.8), rgba(35, 70, 57, 0.9));
+                  color: white;
+                  border: none;
+                  border-radius: 4px;
+                  text-decoration: none;
+                  font-size: 16px;">
+                            Login with Face
+                        </a>
+                    </li>
+                </ul>
+
+
                 <div class="links">
                     <p>Don't have an account? <a href="{{ route('register') }}">Join Our Cause</a></p>
                 </div>
