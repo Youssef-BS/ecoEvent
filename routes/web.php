@@ -88,22 +88,29 @@ Route::post('/feedbacks', [FeedbackController::class, 'store'])->name('feedbacks
 Route::resource('resources', ResourceController::class);
 
 Route::middleware('auth')->group(function () {
-    // Messages
+    // Messagerie
     Route::get('/messagerie', [MessagerieController::class, 'index'])->name('messagerie.index');
+    Route::get('/messagerie/recent', [MessagerieController::class, 'recent'])->name('messagerie.recent');
     Route::get('/messagerie/create', [MessagerieController::class, 'create'])->name('messagerie.create');
     Route::post('/messagerie', [MessagerieController::class, 'store'])->name('messagerie.store');
+
+    // ✅ FIXED: Changed route to match JavaScript call
+    Route::get('/messagerie/unread/count', [MessagerieController::class, 'getUnreadCount'])->name('messagerie.unread-count');
+
+    Route::post('/messagerie/typing', [MessagerieController::class, 'typing'])->name('messagerie.typing');
     Route::get('/messagerie/{userId}', [MessagerieController::class, 'show'])->name('messagerie.show');
     Route::delete('/messagerie/{messagerie}', [MessagerieController::class, 'destroy'])->name('messagerie.destroy');
-    Route::get('/messagerie/unread/count', [MessagerieController::class, 'getUnreadCount'])->name('messagerie.unread-count');
-    Route::post('/messagerie/typing', [MessagerieController::class, 'typing'])->name('messagerie.typing');
-
 
     // Notifications
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
-    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
-    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
-    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unreadCount');
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/recent', [NotificationController::class, 'recent'])->name('recent');
+        Route::get('/count', [NotificationController::class, 'count'])->name('count');
+        Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('markAllRead');
+        Route::get('/{notification}', [NotificationController::class, 'show'])->name('show');
+        Route::post('/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('markAsRead');
+        Route::delete('/{notification}', [NotificationController::class, 'destroy'])->name('destroy');
+    });
 });
 
 

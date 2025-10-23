@@ -93,7 +93,8 @@ class User extends Authenticatable
             ->withPivot(['name', 'email', 'phone'])
             ->withTimestamps();
     }
-    public function notifications() {
+   public function notifications()
+    {
         return $this->hasMany(Notification::class);
     }
 }
