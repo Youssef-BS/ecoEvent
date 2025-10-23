@@ -151,5 +151,5 @@ class Event extends Model
     }
 }
 
-}
+
 
