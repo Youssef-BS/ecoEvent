@@ -6,6 +6,7 @@ use App\ContributionType;
 use App\Http\Requests\SponsorRequest;
 use App\Models\Sponsor;
 use App\Models\Donation;
+use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,12 @@ class SponsorController extends Controller
     {
         $donations = Donation::orderBy('created_at', 'desc')->take(3)->get();
         $sponsors = Sponsor::all();
-        return view('client.index', compact('sponsors', 'donations'));
+
+        $events = Event::with('user')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+        return view('client.index', compact('sponsors', 'donations', 'events'));
     }
 
     public function index(Request $request)

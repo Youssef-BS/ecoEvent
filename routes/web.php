@@ -3,6 +3,8 @@
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ComplaintController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\EventController;
@@ -12,6 +14,7 @@ use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventResourceController;
 use App\Http\Controllers\FaceLoginController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\LikeController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
 
@@ -24,8 +27,8 @@ use App\Http\Controllers\SponsorMetricsController;
 // Route::get('/', fn() => view('client.index'))->name('home');
 Route::get('/', [SponsorController::class, 'home'])->name('home');
 
-Route::get('/login', fn() => view('auth.login'))->name('login');
-Route::get('/register', fn() => view('auth.register'))->name('register');
+
+
 Route::get('/about', fn() => view('client.about'))->name('about');
 Route::get('/contact', fn() => view('client.contact'))->name('contact');
 Route::get('/donation', [DonationController::class, 'index'])->name('donation');
@@ -40,9 +43,7 @@ Route::get('/testimonial', fn() => view('client.testimonial'))->name('testimonia
 Route::post('/register', [AuthController::class, 'register'])->name('register.submit');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/profile', [UserController::class, 'showProfile'])
-    ->middleware('auth')
-    ->name('profile.show');
+
 
 Route::get('/admin', [DashboardController::class, 'index'])
     ->middleware(['auth'])
@@ -119,8 +120,8 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-   // Comments routes
-   Route::get('/posts/{post}/comments', [CommentController::class, 'getComments'])->name('comments.getComments');
+    // Comments routes
+    Route::get('/posts/{post}/comments', [CommentController::class, 'getComments'])->name('comments.getComments');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');

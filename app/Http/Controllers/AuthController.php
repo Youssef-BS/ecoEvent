@@ -72,10 +72,9 @@ class AuthController extends Controller
                 ]);
             }
 
-            // Vérifiez que l'utilisateur a bien un rôle
             $userRole = $user->role ?? 'user'; // Valeur par défaut si le rôle n'existe pas
 
-            // Redirection basée sur le rôle
+
             if ($userRole === 'admin') {
                 return redirect()->intended('/admin')->with('success', 'Connexion réussie !');
             } else {

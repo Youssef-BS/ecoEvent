@@ -10,27 +10,26 @@ use Illuminate\Support\Facades\Auth;
 class EventController extends Controller
 {
 
-   
+
     public function index(Request $request)
 
     {
-    $query = Event::with('user')->withCount('participants')->latest('date');
+        $query = Event::with('user')->withCount('participants')->latest('date');
 
         // Location filtering restricted to configured governorates list
-        $locationInput = trim((string) $request->query('location')); 
+        $locationInput = trim((string) $request->query('location'));
         if ($locationInput !== '') {
             $governorates = config('events.governorates', []);
-           
+
             $normalizedMap = collect($governorates)
                 ->mapWithKeys(fn($g) => [mb_strtolower($g) => $g]);
             $key = mb_strtolower($locationInput);
             if ($normalizedMap->has($key)) {
                 $query->where('location', $normalizedMap->get($key));
             }
-            
         }
 
-        $events = $query->paginate(9)->appends($request->only('location'));
+        $events = $query->paginate(6)->appends($request->only('location'));
 
         return view('client.event', compact('events'));
     }
