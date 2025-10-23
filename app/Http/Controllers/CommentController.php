@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\Comment;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Http;
 
 class CommentController extends Controller
 {
@@ -61,11 +62,27 @@ class CommentController extends Controller
             'content' => 'required|string|max:1000',
         ]);
 
-        Comment::create([
+        $comment = Comment::create([
             'user_id' => Auth::id(),
             'post_id' => $post->id,
             'content' => $request->content,
         ]);
+
+         // Get post + owner
+            $post = $comment->post;
+            $owner = $post->user;
+            $commenter = Auth::user();
+            
+            // Send data to n8n webhook
+            Http::post('http://localhost:5678/webhook-test/new_comment', [
+                'post_id' => $post->id,
+                'comment_content' => $comment->content,
+                'commenter_name' => $commenter->first_name,
+                'post_owner_name' => $owner->first_name,
+                'post_owner_email' => $owner->email,
+            ]);
+
+
 
         return back()->with('success', 'Comment added successfully!');
     }
