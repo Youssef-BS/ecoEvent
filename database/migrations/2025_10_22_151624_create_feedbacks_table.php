@@ -6,26 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('event_resource', function (Blueprint $table) {
+        Schema::create('feedbacks', function (Blueprint $table) {
             $table->id();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
             $table->foreignId('resource_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity')->default(0); 
-            $table->foreignId('sponsor_id')->nullable()->constrained('sponsors')->nullOnDelete();
+            $table->foreignId('sponsor_id')->constrained()->cascadeOnDelete();
+            $table->unsignedTinyInteger('rating'); // note 1 à 5
+            $table->text('comment')->nullable();
             $table->timestamps();
-            $table->unique(['event_id', 'resource_id']);
+
+            // On ne met plus l'unique key
         });
     }
-    /**
-     * Reverse the migrations.
-     */
+
     public function down(): void
     {
-        Schema::dropIfExists('event_resource');
+        Schema::dropIfExists('feedbacks');
     }
 };

@@ -43,7 +43,7 @@ class Event extends Model
     public function resources()
     {
         return $this->belongsToMany(Resource::class)
-            ->withPivot('quantity')
+            ->withPivot('quantity', 'sponsor_id') // ajoute sponsor_id ici
             ->withTimestamps();
     }
     public function posts(): HasMany

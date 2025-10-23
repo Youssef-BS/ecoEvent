@@ -2,14 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Donation;
+use App\ContributionType;
+use App\Http\Requests\SponsorRequest;
 use App\Models\Sponsor;
-use Illuminate\Http\Request;
+use App\Models\Donation;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
 class SponsorController extends Controller
 {
-    // Page d'accueil
+
     public function home()
     {
         $donations = Donation::orderBy('created_at', 'desc')->take(3)->get();
@@ -17,32 +19,36 @@ class SponsorController extends Controller
         return view('client.index', compact('sponsors', 'donations'));
     }
 
-    // Liste des sponsors
-    public function index()
+    public function index(Request $request)
     {
-        $sponsors = Sponsor::all();
+        $query = Sponsor::query();
+
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', $request->name . '%');
+        }
+
+        if ($request->filled('contributionType') && in_array($request->contributionType, array_column(ContributionType::cases(), 'value'))) {
+            $query->where('contribution', $request->contributionType);
+        }
+
+        $sponsors = $query->get();
+
         return view('admin.sponsors.ListeSponsor', compact('sponsors'));
     }
 
-    // Formulaire pour créer un sponsor
+
+
     public function create()
     {
-        return view('sponsors.create');
+        return view('admin.sponsors.create');
     }
 
-    // Enregistrer un sponsor
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'contribution' => 'required|in:financial,material,logistical',
-            'email' => 'nullable|email',
-            'phone' => 'nullable|string|max:20',
-            'website' => 'nullable|url',
-            'logo' => 'nullable|image|max:2048'
-        ]);
 
-        $data = $request->all();
+    public function store(SponsorRequest $request)
+    {
+        $data = $request->validated();
+
 
         if ($request->hasFile('logo')) {
             $data['logo'] = $request->file('logo')->store('logos', 'public');
@@ -50,45 +56,43 @@ class SponsorController extends Controller
 
         Sponsor::create($data);
 
-        return redirect()->route('sponsors.ListeSponsor')->with('success', 'Sponsor créé avec succès.');
+        return redirect()
+            ->route('sponsors.ListeSponsor')
+            ->with('success', 'Sponsor créé avec succès.');
     }
 
-    // Afficher un sponsor
+
     public function show(Sponsor $sponsor)
     {
-        return view('sponsors.show', compact('sponsor'));
+        return view('admin.sponsors.show', compact('sponsor'));
     }
 
-    // Formulaire pour éditer un sponsor
     public function edit(Sponsor $sponsor)
     {
-        return view('sponsors.create', compact('sponsor'));
+        return view('admin.sponsors.create', compact('sponsor'));
     }
 
-    // Mettre à jour un sponsor
-    public function update(Request $request, Sponsor $sponsor)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'contribution' => 'required|in:financial,material,logistical',
-            'email' => 'nullable|email',
-            'phone' => 'nullable|string|max:20',
-            'website' => 'nullable|url',
-            'logo' => 'nullable|image|max:2048'
-        ]);
 
-        $data = $request->all();
+    public function update(SponsorRequest $request, Sponsor $sponsor)
+    {
+        $data = $request->validated();
+
 
         if ($request->hasFile('logo')) {
+            if ($sponsor->logo) {
+                Storage::disk('public')->delete($sponsor->logo);
+            }
             $data['logo'] = $request->file('logo')->store('logos', 'public');
         }
 
         $sponsor->update($data);
 
-        return redirect()->route('sponsors.ListeSponsor')->with('success', 'Sponsor mis à jour avec succès.');
+        return redirect()
+            ->route('sponsors.ListeSponsor')
+            ->with('success', 'Sponsor mis à jour avec succès.');
     }
 
-    // Supprimer un sponsor
+
     public function destroy(Sponsor $sponsor)
     {
         if ($sponsor->logo) {
@@ -97,6 +101,8 @@ class SponsorController extends Controller
 
         $sponsor->delete();
 
-        return redirect()->route('sponsors.ListeSponsor')->with('success', 'Sponsor supprimé avec succès.');
+        return redirect()
+            ->route('sponsors.ListeSponsor')
+            ->with('success', 'Sponsor supprimé avec succès.');
     }
 }

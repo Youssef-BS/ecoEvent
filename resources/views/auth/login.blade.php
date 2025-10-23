@@ -31,6 +31,7 @@
                     <span>Password</span>
                     <i class="fas fa-lock"></i>
                 </div>
+
                 <div class="remember-forgot">
                     <label>
                         <input type="checkbox">
@@ -39,6 +40,11 @@
                     <a href="#">Forgot Password?</a>
                 </div>
                 <input type="submit" value="Login">
+                <div class="face-login">
+                    <a href="{{ url('/login/face') }}" class="btn btn-secondary" style="margin-top: 20px;">
+                        Login with Face
+                    </a>
+                </div>
                 <div class="links">
                     <p>Don't have an account? <a href="/register">Join Our Cause</a></p>
                 </div>
@@ -56,7 +62,10 @@
             </div>
         </div>
     </div>
+
+
 </body>
+
 <style>
     /* --- PALETTE DE COULEURS MODERNES (Raffinées) --- */
     :root {

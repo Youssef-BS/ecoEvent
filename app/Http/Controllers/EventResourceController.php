@@ -4,16 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Models\Resource;
+use App\Models\Sponsor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class EventResourceController extends Controller
 {
     public function edit(Event $event)
     {
-        $event->load('resources'); // ressources déjà réservées
+        $event->load('resources');
         $existing = $event->resources->pluck('pivot.quantity', 'id')->toArray();
         $resources = Resource::with('sponsor')->get();
+
+        Log::info('Edit EventResource', [
+            'event_id' => $event->id,
+            'existing_resources' => $existing,
+            'resources_count' => $resources->count()
+        ]);
 
         return view('events.selectResouce', compact('event', 'resources', 'existing'));
     }
@@ -25,65 +33,99 @@ class EventResourceController extends Controller
             'quantities.*' => 'nullable|integer|min:0',
         ]);
 
-        $newQuantities = array_map('intval', $request->input('quantities', [])); // id => qty
+        $quantities = $request->input('quantities', []);
+
+        Log::info('Update EventResource called', [
+            'event_id' => $event->id,
+            'input_quantities' => $quantities
+        ]);
 
         try {
-            DB::transaction(function () use ($event, $newQuantities) {
-                // existing reservations
+            DB::transaction(function () use ($event, $quantities) {
+
                 $existing = $event->resources->pluck('pivot.quantity', 'id')->toArray();
+                Log::info('Existing pivot quantities', $existing);
 
-                // resources involved (existing or new)
-                $resourceIds = array_unique(array_merge(array_keys($existing), array_keys($newQuantities)));
-
-                // lock rows
+                $resourceIds = array_unique(array_merge(array_keys($existing), array_keys($quantities)));
                 $resources = Resource::whereIn('id', $resourceIds)->lockForUpdate()->get()->keyBy('id');
+
+                Log::info('Resources loaded', [
+                    'resource_ids' => $resources->keys()->toArray()
+                ]);
 
                 $sync = [];
 
-                // handle each requested resource
-                foreach ($newQuantities as $rid => $qty) {
+                foreach ($quantities as $rid => $qty) {
                     $qty = (int)$qty;
-                    $existingQty = $existing[$rid] ?? 0;
                     $res = $resources->get($rid);
 
                     if (!$res) {
-                        throw new \Exception("Resource #{$rid} not found.");
+                        Log::warning("Resource #$rid not found");
+                        continue;
                     }
 
+                    $existingQty = $existing[$rid] ?? 0;
                     $diff = $qty - $existingQty;
 
-                    if ($diff > 0) {
-                        // try to reserve additional units
-                        if ($res->quantity < $diff) {
-                            throw new \Exception("Stock insuffisant pour la ressource: {$res->title}");
-                        }
-                        $res->decrement('quantity', $diff);
-                    } elseif ($diff < 0) {
-                        // release some units back to stock
-                        $res->increment('quantity', -$diff);
+                    Log::info("Processing resource {$res->title}", [
+                        'resource_id' => $rid,
+                        'existing_qty' => $existingQty,
+                        'new_qty' => $qty,
+                        'diff' => $diff,
+                        'available_stock' => $res->quantity
+                    ]);
+
+                    if ($diff > 0 && $res->quantity < $diff) {
+                        throw new \Exception("Stock insuffisant pour la ressource: {$res->title}");
                     }
 
+                    if ($diff > 0) $res->decrement('quantity', $diff);
+                    elseif ($diff < 0) $res->increment('quantity', -$diff);
+
                     if ($qty > 0) {
-                        $sync[$rid] = ['quantity' => $qty];
+                        $sync[$rid] = [
+                            'quantity' => $qty,
+                            'sponsor_id' => $res->sponsor_id
+                        ];
                     }
                 }
 
-                // resources previously reserved but now absent in newQuantities -> release
+                // remettre en stock les ressources non sélectionnées
                 foreach ($existing as $rid => $existingQty) {
-                    if (!isset($newQuantities[$rid]) || (int)$newQuantities[$rid] === 0) {
+                    if (!isset($sync[$rid])) {
                         $res = $resources->get($rid);
                         if ($res) {
                             $res->increment('quantity', $existingQty);
+                            Log::info("Restocked resource {$res->title}", [
+                                'quantity' => $existingQty
+                            ]);
                         }
                     }
                 }
 
-                // sync pivot with new mapping (this will replace old pivot data)
+                Log::info('Sync pivot', $sync);
                 $event->resources()->sync($sync);
+
+                // mettre à jour metrics des sponsors
+                $sponsorIds = collect($sync)->pluck('sponsor_id')->unique();
+                foreach ($sponsorIds as $sid) {
+                    $sponsor = Sponsor::find($sid);
+                    if ($sponsor) {
+                        $sponsor->updateMetricsFromFeedback();
+                        Log::info("Updated sponsor metrics", ['sponsor_id' => $sid]);
+                    }
+                }
             });
 
-            return redirect()->route('events.show', $event->id)->with('success', 'Resources successfully reserved.');
+            Log::info('Update EventResource successful', ['event_id' => $event->id]);
+
+            return redirect()->route('events.show', $event->id)
+                ->with('success', 'Resources successfully reserved.');
         } catch (\Exception $e) {
+            Log::error('Update EventResource failed', [
+                'event_id' => $event->id,
+                'error' => $e->getMessage()
+            ]);
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
