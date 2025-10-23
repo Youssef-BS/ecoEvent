@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,25 +11,16 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
         try {
-            $request->validate([
-                'first_name' => 'required|string|max:50',
-                'last_name' => 'required|string|max:50',
-                'email' => 'required|string|email|max:100|unique:users',
-                'phone' => 'nullable|string|max:20',
-                'password' => 'required|string|min:6|confirmed',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-                'bio' => 'nullable|string|max:255',
-                'latitude' => 'nullable|numeric',
-                'longitude' => 'nullable|numeric',
-            ]);
+            $validated = $request->validated();
 
             $imagePath = null;
             if ($request->hasFile('image')) {
                 $imagePath = $request->file('image')->store('logos', 'public');
             }
+
 
             $location = null;
             if ($request->filled('latitude') && $request->filled('longitude')) {
@@ -36,24 +28,29 @@ class AuthController extends Controller
             }
 
             $user = User::create([
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'email' => $request->email,
-                'phone' => $request->phone,
+                'first_name' => $validated['first_name'],
+                'last_name' => $validated['last_name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
                 'image' => $imagePath,
-                'password' => Hash::make($request->password),
-                'role' => 'user', // ← Définition explicite du rôle
-                'bio' => $request->bio,
+                'bio' => $validated['bio'] ?? null,
                 'location' => $location,
+                'role' => 'user',
+                'password' => Hash::make($validated['password']),
             ]);
 
-            Auth::login($user);
-            return redirect()->route('home')->with('success', 'Inscription réussie, bienvenue !');
 
+            Auth::login($user);
+
+            return redirect()->route('login')
+                ->with('success', 'Registration successful! You can now log in.');;
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => 'Error during registration: ' . $e->getMessage()])
+                ->withInput();
         }
     }
+
+
 
     public function login(Request $request)
     {

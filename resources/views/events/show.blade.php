@@ -270,6 +270,8 @@
                     @endif
                     <span class="text-muted small">{{ $reviewsCount }} review{{ $reviewsCount == 1 ? '' : 's' }}</span>
                 </div>
+
+
             </div>
 
             @auth
@@ -399,7 +401,11 @@
                 @endforelse
             </div>
         </div>
+            <a href="{{ route('products.index', $event) }}" class="btn btn-primary mt-2 text-secondary rouded-3">
+    View Products for sale for this event
+</a>
     </div>
+
 
     @includeIf('client.layouts.footer')
 

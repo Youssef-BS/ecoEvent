@@ -11,20 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('likes', function (Blueprint $table) {
+        Schema::create('event_resource', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('post_id')->constrained('posts')->onDelete('cascade');
-            $table->enum('reaction', ['like', 'love', 'haha', 'sad', 'angry'])->default('like');
+            $table->foreignId('event_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('resource_id')->constrained()->cascadeOnDelete();
+            $table->integer('quantity')->default(0); // quantité réservée pour cet event
             $table->timestamps();
+            $table->unique(['event_id', 'resource_id']);
         });
     }
-
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('likes');
+        Schema::dropIfExists('event_resource');
     }
 };
