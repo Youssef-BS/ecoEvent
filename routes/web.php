@@ -169,3 +169,13 @@ Route::get('/login/face', [FaceLoginController::class, 'loginWithFace']);
 
 Route::get('/sponsors/update-metrics', [SponsorMetricsController::class, 'updateAll']);
 Route::get('/sponsors/metrics', [SponsorMetricsController::class, 'getMetrics']);
+
+
+Route::prefix('/admin/users')->name('users.')->group(function () {
+    Route::get('/all', [UserController::class, 'listUsers'])->name('listUsers');
+    Route::get('/create', [UserController::class, 'create'])->name('create');
+    Route::post('/', [UserController::class, 'store'])->name('store');
+    Route::get('/user/{id}', [UserController::class, 'showProfile'])->name('showProfile');
+    Route::put('/{user}', [UserController::class, 'edit'])->name('edit');
+    Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+});
