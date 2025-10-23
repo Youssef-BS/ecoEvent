@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Donation;
+use App\Models\Event;
 use App\Models\Sponsor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -21,7 +22,12 @@ class SponsorController extends Controller
     public function index()
     {
         $sponsors = Sponsor::all();
-        return view('admin.sponsors.ListeSponsor', compact('sponsors'));
+        $events = Event::with('user')
+            ->latest('created_at')
+            ->take(3)
+            ->get();
+        return view('client.index', compact('sponsors','donations','events'));
+
     }
 
     // Formulaire pour créer un sponsor

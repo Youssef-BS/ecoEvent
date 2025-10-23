@@ -11,9 +11,13 @@ use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventResourceController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
+
+use App\Http\Controllers\ParticipationController;
+
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
+
 
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
@@ -51,6 +55,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+    // Reviews CRUD (nested create; standalone update/delete)
+    Route::post('/events/{event}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Event participation
+    Route::post('/events/{event}/participations', [ParticipationController::class, 'store'])->name('participations.store');
+    Route::delete('/events/{event}/participations', [ParticipationController::class, 'destroy'])->name('participations.destroy');
 });
 
 // Public show route
