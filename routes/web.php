@@ -14,6 +14,9 @@ use App\Http\Controllers\FaceLoginController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
+
+use App\Http\Controllers\ParticipationController;
+
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\SponsorMetricsController;
 
@@ -51,6 +54,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+    // Reviews CRUD (nested create; standalone update/delete)
+    Route::post('/events/{event}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Event participation
+    Route::post('/events/{event}/participations', [ParticipationController::class, 'store'])->name('participations.store');
+    Route::delete('/events/{event}/participations', [ParticipationController::class, 'destroy'])->name('participations.destroy');
 });
 
 // Public show route
@@ -106,11 +118,31 @@ Route::middleware(['auth'])->group(function () {
     ]);
 });
 
+Route::middleware('auth')->group(function () {
+   // Comments routes
+   Route::get('/posts/{post}/comments', [CommentController::class, 'getComments'])->name('comments.getComments');
+    Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::put('/comments/{comment}', [CommentController::class, 'update'])->name('comments.update');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    Route::post('/posts/{post}/like', [LikeController::class, 'toggle'])->name('likes.toggle');
+});
+
 Route::get('/admin/donations', [DonationController::class, 'adminIndex'])->name('donations.adminIndex');
 Route::post('/donations', [DonationController::class, 'store'])->name('donations.store');
 Route::put('/donations/{id}', [DonationController::class, 'update'])->name('donations.update');
 Route::delete('/donations/{id}', [DonationController::class, 'destroy'])->name('donations.destroy');
 
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
+    Route::get('/complaints/user', [ComplaintController::class, 'userComplaints'])->name('complaints.user');
+    Route::get('/complaints/create', [ComplaintController::class, 'create'])->name('complaints.create');
+    Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+    Route::put('/complaints/{id}', [ComplaintController::class, 'update'])->name('complaints.update');
+    Route::delete('/complaints/{id}', [ComplaintController::class, 'destroy'])->name('complaints.destroy');
+    Route::post('/complaints/{id}/reply', [ComplaintController::class, 'reply'])->name('complaints.reply');
+});
 
 
 

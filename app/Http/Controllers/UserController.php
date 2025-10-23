@@ -2,77 +2,86 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\User;
-
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function listUsers()
     {
         $users = User::all();
-        return view('users.index', compact('users'));
+        return view('admin.users.listUsers', compact('users'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return view('users.create');
+        return view('admin.users.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'phone' => 'nullable|string|max:15',
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|unique:users',
+            'phone'      => 'nullable|string|max:20',
+            'password'   => 'required|min:6',
+            'role'       => 'nullable|string',
+            'image'      => 'nullable|image|max:2048',
         ]);
 
-        User::create($validated);
+        $data = $request->all();
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')->store('users', 'public');
+        }
+        $data['password'] = Hash::make($data['password']);
 
-        return redirect()->route('users.index')->with('success', 'User created successfully.');
+        User::create($data);
+
+        return redirect()->route('users.listUsers')->with('success', 'User created successfully!');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function showProfile()
+    public function showProfile($id)
     {
-        /** @var User $user */
-        $user = Auth::user();
-        return view('users.profile', compact('user'));
-    }
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
+        $user = User::findOrFail($id);
+        return view('admin.users.showProfile', compact('user'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function edit(Request $request, User $user)
     {
-        //
+        $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name'  => 'required|string|max:255',
+            'email'      => 'required|email|unique:users,email,' . $user->id,
+            'phone'      => 'nullable|string|max:20',
+            'role'       => 'nullable|string',
+            'image'      => 'nullable|image|max:2048',
+        ]);
+
+        $data = $request->all();
+        if ($request->hasFile('image')) {
+            if ($user->image) {
+                Storage::disk('public')->delete($user->image);
+            }
+            $data['image'] = $request->file('image')->store('users', 'public');
+        }
+
+        $user->update($data);
+
+        return redirect()->route('users.showProfile', $user->id)->with('success', 'Profile updated successfully!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        //
+        $user = User::findOrFail($id);
+        if ($user->image) {
+            Storage::disk('public')->delete($user->image);
+        }
+        $user->delete();
+
+        return redirect()->route('users.listUsers')->with('success', 'User deleted successfully!');
     }
 }

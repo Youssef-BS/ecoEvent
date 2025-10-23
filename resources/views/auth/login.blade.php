@@ -4,41 +4,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Login - Charitize</title>
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Josefin+Sans:wght@600;700&display=swap" rel="stylesheet">
-    <!-- J'ai inclus Inter comme police moderne par défaut, et gardé Josefin Sans pour les titres -->
 </head>
 
 <body>
     <div class="login-container">
         <div class="login">
             <div class="login-header">
-
                 <h2>Login</h2>
                 <p>Sign in to continue making a difference</p>
             </div>
-            <form action="{{ route('login.submit') }}" method="POST">
+
+            {{-- Show status messages (password reset success, etc.) --}}
+            @if (session('status'))
+                <div class="mb-4 font-medium text-sm text-green-600">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            {{-- Show validation errors --}}
+            @if ($errors->any())
+                <div class="mb-4">
+                    <ul class="text-sm text-red-600 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('login') }}">
                 @csrf
                 <div class="inputBox">
-                    <input type="text" name="email" required="required">
+                    <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus>
                     <span>Email</span>
                     <i class="fas fa-envelope"></i>
                 </div>
+
                 <div class="inputBox">
-                    <input type="password" name="password" required="required">
+                    <input id="password" type="password" name="password" required autocomplete="current-password">
                     <span>Password</span>
                     <i class="fas fa-lock"></i>
+                    <i class="fas fa-eye toggle-password" id="togglePassword"></i>
                 </div>
 
                 <div class="remember-forgot">
-                    <label>
-                        <input type="checkbox">
+                    <label for="remember_me">
+                        <input id="remember_me" type="checkbox" name="remember">
                         Remember me
                     </label>
-                    <a href="#">Forgot Password?</a>
+
+                    @if (Route::has('password.request'))
+                        <a href="{{ route('password.request') }}">Forgot Password?</a>
+                    @endif
                 </div>
+
                 <input type="submit" value="Login">
                 <div class="face-login">
                     <a href="{{ url('/login/face') }}" class="btn btn-secondary" style="margin-top: 20px;">
@@ -46,18 +70,19 @@
                     </a>
                 </div>
                 <div class="links">
-                    <p>Don't have an account? <a href="/register">Join Our Cause</a></p>
+                    <p>Don't have an account? <a href="{{ route('register') }}">Join Our Cause</a></p>
                 </div>
             </form>
         </div>
+
         <div class="login-background">
             <div class="background-overlay"></div>
             <div class="background-content">
                 <h1>Together for a Better Tomorrow</h1>
                 <p>We believe in creating opportunities and empowering communities through education, healthcare, and sustainable development.</p>
                 <div class="background-buttons">
-                    <a class="btn btn-primary" href="#!">Donate Now</a>
-                    <a class="btn btn-secondary" href="#!">Join Us Now</a>
+                    <a class="btn btn-primary" href="#">Donate Now</a>
+                    <a class="btn btn-secondary" href="{{ route('register') }}">Join Us Now</a>
                 </div>
             </div>
         </div>
@@ -67,16 +92,11 @@
 </body>
 
 <style>
-    /* --- PALETTE DE COULEURS MODERNES (Raffinées) --- */
     :root {
         --primary-color: #3A6351;
-        /* Vert Mousse Profond (Texte, Marque) */
         --secondary-color: #D9EAD3;
-        /* Vert Sauge Clair (Accent très clair) */
         --accent-color: #6AA84F;
-        /* Vert Végétal (CTA, Bouton principal) */
         --hover-color: #4CAF50;
-        /* Un vert un peu plus vif pour le hover */
         --text-light: #555;
         --bg-main: #f8f9fa;
     }
@@ -120,17 +140,7 @@
         text-align: center;
     }
 
-    .logo {
-        font-family: 'Josefin Sans', sans-serif;
-        font-weight: 700;
-        /* Couleur du Logo */
-        color: var(--primary-color);
-        font-size: 36px;
-        margin-bottom: 15px;
-    }
-
     .login h2 {
-        /* Couleur du Titre */
         color: var(--primary-color);
         font-size: 28px;
         font-weight: 600;
@@ -142,12 +152,12 @@
         font-size: 16px;
     }
 
-    .login .inputBox {
+    .inputBox {
         position: relative;
         margin-bottom: 25px;
     }
 
-    .login .inputBox input {
+    .inputBox input {
         width: 100%;
         padding: 15px 20px 15px 45px;
         font-size: 16px;
@@ -158,15 +168,13 @@
         background: #f9f9f9;
     }
 
-    .login .inputBox input:focus {
-        /* Couleur du focus (bordure) */
+    .inputBox input:focus {
         border-color: var(--primary-color);
         background: white;
         box-shadow: 0 0 0 3px rgba(58, 99, 81, 0.2);
-        /* Utilisation d'un rgba de la primary color */
     }
 
-    .login .inputBox span {
+    .inputBox span {
         position: absolute;
         left: 45px;
         top: 50%;
@@ -177,19 +185,18 @@
         transition: all 0.3s ease;
     }
 
-    .login .inputBox input:focus~span,
-    .login .inputBox input:valid~span {
+    .inputBox input:focus~span,
+    .inputBox input:valid~span {
         top: -10px;
         left: 20px;
         font-size: 12px;
         background: white;
         padding: 0 8px;
-        /* Couleur du label flottant */
         color: var(--primary-color);
         font-weight: 500;
     }
 
-    .login .inputBox i {
+    .inputBox i {
         position: absolute;
         left: 15px;
         top: 50%;
@@ -199,8 +206,22 @@
         transition: color 0.3s ease;
     }
 
-    .login .inputBox input:focus~i {
-        /* Couleur de l'icône au focus */
+    .inputBox input:focus~i {
+        color: var(--primary-color);
+    }
+
+    .toggle-password {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+        font-size: 18px;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .toggle-password:hover {
         color: var(--primary-color);
     }
 
@@ -221,72 +242,62 @@
 
     .remember-forgot input {
         margin-right: 5px;
-        /* Couleur de la case à cocher */
         accent-color: var(--accent-color);
     }
 
     .remember-forgot a {
-        /* Couleur du lien "Forgot Password" */
         color: var(--primary-color);
         text-decoration: none;
         transition: color 0.3s ease;
     }
 
     .remember-forgot a:hover {
-        /* Couleur du lien au survol */
         color: var(--accent-color);
         text-decoration: underline;
     }
 
-    .login input[type="submit"] {
+    input[type="submit"] {
         width: 100%;
         padding: 15px;
         border: none;
         border-radius: 8px;
-        /* Gradient du bouton Login (Vert Végétal -> Vert Mousse) */
         background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
         color: white;
         font-size: 16px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
-        /* Ombre avec la couleur accent */
         box-shadow: 0 4px 15px rgba(106, 168, 79, 0.3);
     }
 
-    .login input[type="submit"]:hover {
-        /* Inversement du gradient au survol */
+    input[type="submit"]:hover {
         background: linear-gradient(135deg, var(--primary-color), var(--hover-color));
         transform: translateY(-2px);
-        /* Ombre avec la couleur accent */
         box-shadow: 0 6px 20px rgba(106, 168, 79, 0.4);
     }
 
-    .login .links {
+    .links {
         text-align: center;
         margin-top: 20px;
         color: var(--text-light);
     }
 
-    .login .links a {
-        /* Couleur du lien "Join Our Cause" */
+    .links a {
         color: var(--primary-color);
         text-decoration: none;
         font-weight: 500;
         transition: color 0.3s ease;
     }
 
-    .login .links a:hover {
-        /* Couleur du lien au survol */
+    .links a:hover {
         color: var(--accent-color);
         text-decoration: underline;
     }
 
-    /* Background Section */
     .login-background {
         width: 55%;
-        /* Remplace le dégradé bleu par le Vert Mousse Profond (RGB : 58, 99, 81) */
-        background: linear-gradient(rgba(58, 99, 81, 0.8), rgba(35, 70, 57, 0.9)), url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80');
+        background: linear-gradient(rgba(58, 99, 81, 0.8), rgba(35, 70, 57, 0.9)),
+            url('https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1470&q=80');
         background-size: cover;
         background-position: center;
         display: flex;
@@ -337,7 +348,6 @@
     .btn {
         padding: 12px 30px;
         border-radius: 8px;
-        /* Légerement plus arrondi */
         text-decoration: none;
         font-weight: 600;
         transition: all 0.3s ease;
@@ -346,13 +356,11 @@
 
     .btn-primary {
         background: white;
-        /* Couleur du bouton principal (Donate Now) */
         color: var(--primary-color);
     }
 
     .btn-primary:hover {
         background: var(--secondary-color);
-        /* Utilise la couleur Sauge Clair au survol */
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
@@ -364,14 +372,12 @@
     }
 
     .btn-secondary:hover {
-        /* Inversement des couleurs au survol (Vert Végétal comme couleur de fond) */
         background: var(--accent-color);
         color: white;
         border-color: var(--accent-color);
         transform: translateY(-2px);
     }
 
-    /* Responsive design */
     @media (max-width: 992px) {
         .login-container {
             flex-direction: column;
@@ -395,32 +401,6 @@
 
         .background-content p {
             font-size: 16px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .login-container {
-            padding: 10px;
-        }
-
-        .login {
-            padding: 30px 20px;
-        }
-
-        .remember-forgot {
-            flex-direction: column;
-            gap: 10px;
-            align-items: flex-start;
-        }
-
-        .background-buttons {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .btn {
-            width: 100%;
-            max-width: 200px;
         }
     }
 </style>
