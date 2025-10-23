@@ -11,10 +11,17 @@ use App\Http\Controllers\DonationController;
 use App\Http\Controllers\EventResourceController;
 use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
+
+use App\Http\Controllers\ParticipationController;
+
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\ComplaintController;
+
+
+
+
 // // CLIENT ROUTES
 // Route::get('/', fn() => view('client.index'))->name('home');
 Route::get('/', [SponsorController::class, 'home'])->name('home');
@@ -51,6 +58,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/events/{event}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::put('/events/{event}', [EventController::class, 'update'])->name('events.update');
     Route::delete('/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+    // Reviews CRUD (nested create; standalone update/delete)
+    Route::post('/events/{event}/reviews', [\App\Http\Controllers\ReviewController::class, 'store'])->name('reviews.store');
+    Route::put('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'update'])->name('reviews.update');
+    Route::delete('/reviews/{review}', [\App\Http\Controllers\ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Event participation
+    Route::post('/events/{event}/participations', [ParticipationController::class, 'store'])->name('participations.store');
+    Route::delete('/events/{event}/participations', [ParticipationController::class, 'destroy'])->name('participations.destroy');
 });
 
 // Public show route
@@ -154,3 +170,13 @@ Route::prefix('/admin/users')->name('users.')->group(function () {
 });
 
 
+
+Route::middleware([
+    'auth:sanctum',
+    config('jetstream.auth_session'),
+    'verified',
+])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+});
