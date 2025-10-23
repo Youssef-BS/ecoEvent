@@ -10,9 +10,28 @@ use Illuminate\Support\Facades\Auth;
 class EventController extends Controller
 {
 
-    public function index()
+   
+    public function index(Request $request)
+
     {
-        $events = Event::with('user')->latest('date')->paginate(6);
+    $query = Event::with('user')->withCount('participants')->latest('date');
+
+        // Location filtering restricted to configured governorates list
+        $locationInput = trim((string) $request->query('location')); 
+        if ($locationInput !== '') {
+            $governorates = config('events.governorates', []);
+           
+            $normalizedMap = collect($governorates)
+                ->mapWithKeys(fn($g) => [mb_strtolower($g) => $g]);
+            $key = mb_strtolower($locationInput);
+            if ($normalizedMap->has($key)) {
+                $query->where('location', $normalizedMap->get($key));
+            }
+            
+        }
+
+        $events = $query->paginate(9)->appends($request->only('location'));
+
         return view('client.event', compact('events'));
     }
 
@@ -65,7 +84,10 @@ class EventController extends Controller
 
     public function show(Event $event)
     {
-        return view('events.show', compact('event'));
+        $event->load(['reviews.user']);
+        // averageRating accessor returns null if relation not loaded; we loaded it above
+        $averageRating = $event->average_rating; // dynamic attribute
+        return view('events.show', compact('event', 'averageRating'));
     }
 
 

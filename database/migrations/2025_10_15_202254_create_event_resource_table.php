@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
             $table->foreignId('resource_id')->constrained()->cascadeOnDelete();
-            $table->integer('quantity')->default(0); // quantité réservée pour cet event
+            $table->integer('quantity')->default(0); 
+            $table->foreignId('sponsor_id')->nullable()->constrained('sponsors')->nullOnDelete();
             $table->timestamps();
             $table->unique(['event_id', 'resource_id']);
         });

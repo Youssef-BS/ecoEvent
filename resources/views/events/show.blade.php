@@ -29,6 +29,66 @@
 
     <!-- Template Stylesheet -->
     <link href="{{ asset('css/style.css') }}" rel="stylesheet">
+    <style>
+        /* Reviews section styling */
+        .reviews-card {
+            border-radius: 1rem;
+        }
+
+        .reviews-header {
+            border-bottom: 1px solid rgba(0, 0, 0, .06);
+        }
+
+        .rating-pill {
+            background: #eef6d1;
+            /* subtle green */
+            color: #0d1b2a;
+            border: 1px solid rgba(13, 27, 42, .15);
+            border-radius: 999px;
+            padding: .35rem .7rem;
+            font-weight: 700;
+        }
+
+        /* Star rating input */
+        .star-rating {
+            direction: rtl;
+            display: inline-flex;
+            gap: .15rem;
+        }
+
+        .star-rating input {
+            display: none;
+        }
+
+        .star-rating label {
+            cursor: pointer;
+            font-size: 1.25rem;
+            color: #d4d8dd;
+            transition: color .15s ease;
+        }
+
+        .star-rating input:checked~label,
+        .star-rating label:hover,
+        .star-rating label:hover~label {
+            color: #ffc107;
+        }
+
+        .review-item+.review-item {
+            border-top: 1px solid rgba(0, 0, 0, .06);
+        }
+
+        .avatar-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #0d1b2a;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+    </style>
 </head>
 
 <body>
@@ -62,15 +122,15 @@
                 <h2 class="mb-0">{{ $event->title }}</h2>
                 <div>
                     @auth
-                        @if (auth()->id() === (int) $event->user_id)
-                            <a href="{{ route('events.edit', $event) }}" class="btn btn-warning py-1 px-3">Edit</a>
-                            <form action="{{ route('events.destroy', $event) }}" method="POST" class="d-inline"
-                                onsubmit="return confirm('Delete this event?')">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-danger py-1 px-3" type="submit">Delete</button>
-                            </form>
-                        @endif
+                    @if (auth()->id() === (int) $event->user_id)
+                    <a href="{{ route('events.edit', $event) }}" class="btn btn-warning py-1 px-3">Edit</a>
+                    <form action="{{ route('events.destroy', $event) }}" method="POST" class="d-inline"
+                        onsubmit="return confirm('Delete this event?')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="btn btn-danger py-1 px-3" type="submit">Delete</button>
+                    </form>
+                    @endif
                     @endauth
                     <a href="{{ route('event') }}" class="btn btn-secondary py-1 px-3">All events</a>
                 </div>
@@ -79,8 +139,8 @@
             <div class="row g-4 align-items-start">
                 <div class="col-md-6">
                     @if ($event->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($event->image))
-                        <img src="{{ \Illuminate\Support\Facades\Storage::url($event->image) }}"
-                            alt="{{ $event->title }}" class="img-fluid w-100 rounded mb-3">
+                    <img src="{{ \Illuminate\Support\Facades\Storage::url($event->image) }}"
+                        alt="{{ $event->title }}" class="img-fluid w-100 rounded mb-3">
                     @endif
                 </div>
                 <div class="col-md-6">
@@ -93,8 +153,15 @@
                                 class="fa fa-map-marker-alt text-primary me-2"></i>{{ $event->location ?? '—' }}</p>
                         @php $price = is_null($event->price) ? 0 : (int) $event->price; @endphp
 
-                        <strong>Price:</strong>
-                        {{ $price === 0 ? 'Free' : number_format($price, 0, ',', ' ') . ' DT' }}
+                        <div class="d-flex align-items-center justify-content-between gap-2">
+                            <span><strong>Price:</strong>
+                                {{ $price === 0 ? 'Free' : number_format($price, 0, ',', ' ') . ' DT' }}</span>
+                            {{-- <span class="badge"
+                                style="background:#CBDF72;color:#0d1b2a;border:1px solid rgba(13,27,42,.15);border-radius:999px;padding:.45rem .85rem;"
+                                title="Participants">
+                                {{ $event->participants()->count() }}
+                            </span> --}}
+                        </div>
                         </p>
                     </div>
                     <p class="mb-3 text-break"
@@ -102,15 +169,147 @@
                         {{ $event->description }}
                     </p>
                     <p class="text-muted mb-0">Created by: {{ $event->user?->first_name }}
-                        {{ $event->user?->last_name }}</p>
+                        {{ $event->user?->last_name }}
+                    </p>
                 </div>
 
+                <!-- Bouton pour ouvrir la modal -->
+                <button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#feedbackModal">
+                    Give Feedback on Resources
+                </button>
 
             </div>
+
+            @auth
+                @php
+                    $alreadyReviewed = $event->reviews->firstWhere('user_id', auth()->id());
+                @endphp
+                @if (session('success'))
+                    <div class="alert alert-success">{{ session('success') }}</div>
+                @endif
+                @if (session('error'))
+                    <div class="alert alert-danger">{{ session('error') }}</div>
+                @endif
+                @if ($errors->any())
+                    <div class="alert alert-danger">
+                        <ul class="mb-0 small">
+                            @foreach ($errors->all() as $err)
+                                <li>{{ $err }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                @if (!$alreadyReviewed)
+                    <form action="{{ route('reviews.store', $event) }}" method="POST" class="p-3 p-md-4">
+                        @csrf
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4">
+                                <label class="form-label d-block">Rating <span class="text-danger">*</span></label>
+                                <div class="star-rating">
+                                    @for ($i = 5; $i >= 1; $i--)
+                                        <input type="radio" id="rate_{{ $i }}" name="rating"
+                                            value="{{ $i }}" required>
+                                        <label for="rate_{{ $i }}"
+                                            aria-label="{{ $i }} star{{ $i > 1 ? 's' : '' }}"><i
+                                                class="fa fa-star"></i></label>
+                                    @endfor
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Comment (optional)</label>
+                                <textarea name="comment" rows="2" class="form-control" placeholder="Share your thoughts"></textarea>
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button class="btn btn-primary" type="submit">Submit</button>
+                            </div>
+                        </div>
+                    </form>
+                @else
+                    <div class="alert alert-info m-4">You have already reviewed this event. You can edit or delete your
+                        review below.</div>
+                @endif
+            @endauth
+
+            <div class="list-group list-group-flush">
+                @forelse($event->reviews as $review)
+                    <div class="list-group-item review-item py-3">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex align-items-start gap-3">
+                                @php
+                                    $fn = $review->user?->first_name ?? '';
+                                    $ln = $review->user?->last_name ?? '';
+                                    $initials = strtoupper(mb_substr($fn, 0, 1) . mb_substr($ln, 0, 1));
+                                @endphp
+                                <div class="avatar-circle">{{ $initials }}</div>
+                                <div>
+                                    <div class="fw-semibold">{{ $fn }} {{ $ln }}</div>
+                                    <div class="text-warning small">
+                                        @for ($s = 1; $s <= 5; $s++)
+                                            <i class="fa fa-star{{ $s <= $review->rating ? '' : '-o' }}"></i>
+                                        @endfor
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">{{ $review->created_at?->diffForHumans() }}</small>
+                        </div>
+                        @if ($review->comment)
+                            <p class="mt-2 mb-0 text-break" style="white-space:pre-wrap;">{{ $review->comment }}</p>
+                        @endif
+                        @auth
+                            @if (auth()->id() === (int) $review->user_id)
+                                <div class="d-flex gap-2">
+                                    <!-- Edit inline collapsible -->
+                                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#editReview{{ $review->idReview }}">Edit</button>
+                                    <form action="{{ route('reviews.destroy', $review) }}" method="POST"
+                                        onsubmit="return confirm('Delete this review?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                                    </form>
+                                </div>
+                                <div id="editReview{{ $review->idReview }}" class="collapse mt-3">
+                                    <form action="{{ route('reviews.update', $review) }}" method="POST"
+                                        class="border rounded p-3 bg-light">
+                                        @csrf
+                                        @method('PUT')
+                                        <div class="row g-2 align-items-center">
+                                            <div class="col-sm-4">
+                                                <label class="form-label d-block">Rating</label>
+                                                <div class="star-rating">
+                                                    @for ($i = 5; $i >= 1; $i--)
+                                                        <input type="radio"
+                                                            id="edit_rate_{{ $review->idReview }}_{{ $i }}"
+                                                            name="rating" value="{{ $i }}"
+                                                            @checked($i == $review->rating) required>
+                                                        <label
+                                                            for="edit_rate_{{ $review->idReview }}_{{ $i }}"><i
+                                                                class="fa fa-star"></i></label>
+                                                    @endfor
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <label class="form-label">Comment</label>
+                                                <textarea name="comment" rows="2" class="form-control">{{ $review->comment }}</textarea>
+                                            </div>
+                                            <div class="col-sm-2 d-grid">
+                                                <button class="btn btn-primary" type="submit">Save</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            @endif
+                        @endauth
+                    </div>
+                @empty
+                    <p class="text-muted mb-0 p-4">No reviews yet. Be the first to share your feedback!</p>
+                @endforelse
+            </div>
         </div>
-            <a href="{{ route('products.index', $event) }}" class="btn btn-primary mt-2 text-secondary rouded-3">
-    View Products for sale for this event
-</a>
+        <a href="{{ route('products.index', $event) }}" class="btn btn-primary mt-2 text-secondary rouded-3">
+            View Products for sale for this event
+        </a>
     </div>
 
 
@@ -129,6 +328,99 @@
     <script src="{{ asset('lib/counterup/counterup.min.js') }}"></script>
     <!-- Template Javascript -->
     <script src="{{ asset('js/main.js') }}"></script>
+    <!-- Feedback Modal -->
+    <!-- Feedback Modal -->
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-labelledby="feedbackModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ route('feedbacks.store') }}" method="POST">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="feedbackModalLabel">Resources & Feedback</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        @if($event->resources->count() > 0)
+                        <div class="row g-4">
+                            @foreach($event->resources as $resource)
+                            <div class="col-md-4 text-center">
+                                <div class="card shadow-sm border-0">
+                                    @if ($resource->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($resource->image))
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::url($resource->image) }}"
+                                        alt="{{ $resource->name }}"
+                                        class="card-img-top rounded-top"
+                                        style="height: 150px; object-fit: cover;">
+                                    @else
+                                    <img src="{{ asset('img/default-resource.jpg') }}"
+                                        alt="No image"
+                                        class="card-img-top rounded-top"
+                                        style="height: 150px; object-fit: cover;">
+                                    @endif
+
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ $resource->name }}</h6>
+                                        <p class="text-muted mb-1">Sponsor: <strong>{{ $resource->sponsor->name }}</strong></p>
+
+                                        <div class="star-rating mb-2" data-resource="{{ $resource->id }}">
+                                            @for ($i = 1; $i <= 5; $i++)
+                                                <i class="fa-regular fa-star" data-value="{{ $i }}"></i>
+                                                @endfor
+                                        </div>
+
+                                        <input type="hidden" name="ratings[{{ $resource->id }}]" value="0">
+                                        <input type="hidden" name="sponsor_ids[{{ $resource->id }}]" value="{{ $resource->sponsor->id }}">
+                                        <input type="hidden" name="resource_ids[]" value="{{ $resource->id }}">
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <div class="mt-4">
+                            <label for="comment" class="form-label">Global Comment</label>
+                            <textarea name="comment" id="comment" rows="3" class="form-control"></textarea>
+                        </div>
+                        @else
+                        <p>No resources associated with this event.</p>
+                        @endif
+                        <input type="hidden" name="event_id" value="{{ $event->id }}">
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.star-rating').forEach(container => {
+                const stars = container.querySelectorAll('.fa-star');
+                const input = container.nextElementSibling; // le input hidden correspondant
+                stars.forEach(star => {
+                    star.addEventListener('click', () => {
+                        const rating = star.getAttribute('data-value');
+                        input.value = rating;
+
+                        stars.forEach(s => {
+                            s.classList.remove('fa-solid', 'text-warning');
+                            s.classList.add('fa-regular');
+                        });
+
+                        for (let i = 0; i < rating; i++) {
+                            stars[i].classList.remove('fa-regular');
+                            stars[i].classList.add('fa-solid', 'text-warning');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
 </body>
 
 </html>

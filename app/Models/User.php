@@ -2,42 +2,67 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Jetstream\HasProfilePhoto;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class User extends Authenticatable
 {
+    use HasApiTokens;
+
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory;
+    use HasProfilePhoto;
+    use Notifiable;
+    use TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
-    public $fillable = [
+    protected $fillable = [
         'first_name',
         'last_name',
         'email',
+        'password',
         'image',
         'phone',
-        'password',
         'role',
         'bio',
-        'location'
+        'location',
+
+
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_recovery_codes',
+        'two_factor_secret',
+    ];
+
+    /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array<int, string>
+     */
+    protected $appends = [
+        'profile_photo_url',
     ];
 
     /**
@@ -45,7 +70,7 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
-    public function casts(): array
+    protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
@@ -53,9 +78,11 @@ class User extends Authenticatable
         ];
     }
 
+
     /**
      * Relationships
      */
+
     public function donations()
     {
         return $this->hasMany(Donation::class);
@@ -74,12 +101,17 @@ class User extends Authenticatable
     public function participations()
     {
         return $this->belongsToMany(Event::class, 'participations');
+     public function participations() {
+        return $this->belongsToMany(Event::class, 'participations', 'idUser', 'idEvent')
+            ->withPivot(['name', 'email', 'phone'])
+            ->withTimestamps();
     }
 
     public function notifications()
     {
         return $this->hasMany(Notification::class);
     }
+
 
     /**
      * Profile Accessors
@@ -121,4 +153,5 @@ class User extends Authenticatable
     {
         return $this->first_name . ' ' . $this->last_name;
     }
+
 }
