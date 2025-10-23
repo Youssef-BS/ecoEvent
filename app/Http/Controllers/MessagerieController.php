@@ -18,23 +18,101 @@ class MessagerieController extends Controller
         if (!Auth::check()) {
             return redirect()->route('login')->withErrors(['error' => 'Veuillez vous connecter.']);
         }
+
         $user = Auth::user();
-        $conversations = Messagerie::where('receiver_id', $user->getAuthIdentifier())
+
+        // Get all messages for this user, ordered by newest first
+        $allMessages = Messagerie::where('receiver_id', $user->getAuthIdentifier())
             ->orWhere('sender_id', $user->getAuthIdentifier())
             ->with(['sender', 'receiver'])
             ->orderBy('sent_at', 'desc')
-            ->get()
-            ->groupBy(function($message) use ($user) {
-                return $message->sender_id === $user->getAuthIdentifier()
-                    ? $message->receiver_id
-                    : $message->sender_id;
-            });
+            ->get();
+
+        // Group by conversation partner and get the latest message for each conversation
+        $conversations = $allMessages->groupBy(function($message) use ($user) {
+            return $message->sender_id === $user->getAuthIdentifier()
+                ? $message->receiver_id
+                : $message->sender_id;
+        })->map(function($messages) {
+            // Get the latest message for this conversation
+            return $messages->sortByDesc('sent_at')->first();
+        })->sortByDesc('sent_at'); // Sort conversations by latest message
+
         $unreadCount = Messagerie::where('receiver_id', $user->getAuthIdentifier())
             ->where('status', MessageStatus::SENT)
             ->count();
+
         return view('client.messagerie.index', compact('conversations', 'unreadCount'));
     }
 
+    /**
+     * Get recent conversations for dropdown (AJAX)
+     */
+    /**
+     * Get recent conversations for dropdown (AJAX)
+     */
+    public function recent()
+    {
+        if (!Auth::check()) {
+            return response()->json(['conversations' => [], 'unread_count' => 0]);
+        }
+
+        $user = Auth::user();
+
+        // Get all messages for this user
+        $allMessages = Messagerie::where('receiver_id', $user->id)
+            ->orWhere('sender_id', $user->id)
+            ->with(['sender', 'receiver'])
+            ->orderBy('sent_at', 'desc')
+            ->get();
+
+        // Group by conversation partner and get the latest message for each conversation
+        $conversations = $allMessages->groupBy(function($message) use ($user) {
+            return $message->sender_id === $user->id
+                ? $message->receiver_id
+                : $message->sender_id;
+        })->map(function($messages) use ($user) {
+            // Get the latest message for this conversation
+            $latestMessage = $messages->first(); // Already sorted by sent_at desc
+
+            // Determine the other user (conversation partner)
+            $otherUser = $latestMessage->sender_id === $user->id
+                ? $latestMessage->receiver
+                : $latestMessage->sender;
+
+            // Check if there are unread messages from this user
+            $hasUnread = $messages->where('receiver_id', $user->id)
+                ->where('status', MessageStatus::SENT)
+                ->isNotEmpty();
+
+            // Get user initials for avatar placeholder
+            $initials = strtoupper(substr($otherUser->first_name, 0, 1) . substr($otherUser->last_name, 0, 1));
+
+            return [
+                'user_id' => $otherUser->id,
+                'user_name' => $otherUser->first_name . ' ' . $otherUser->last_name,
+                'user_image' => $otherUser->profile_image ?? null,
+                'user_initials' => $initials,
+                'last_message' => Str::limit($latestMessage->content, 60),
+                'time_ago' => $latestMessage->sent_at->diffForHumans(),
+                'has_unread' => $hasUnread,
+                'sent_at' => $latestMessage->sent_at->timestamp, // Add timestamp for proper sorting
+            ];
+        })
+            ->sortByDesc('sent_at') // Sort by actual timestamp
+            ->take(10) // Limit to 10 most recent conversations
+            ->values(); // Reset array keys
+
+        // Count total unread messages
+        $unreadCount = Messagerie::where('receiver_id', $user->id)
+            ->where('status', MessageStatus::SENT)
+            ->count();
+
+        return response()->json([
+            'conversations' => $conversations,
+            'unread_count' => $unreadCount,
+        ]);
+    }
     public function show($userId)
     {
         if (!Auth::check()) {
@@ -58,6 +136,8 @@ class MessagerieController extends Controller
 
         return view('client.messagerie.show', compact('messages', 'otherUser'));
     }
+
+// Replace your store() method in MessagerieController with this:
 
     public function store(Request $request)
     {
@@ -107,18 +187,26 @@ class MessagerieController extends Controller
             ]);
 
             // Charger les relations pour l'événement
-            $message->load(['sender']);
+            $message->load(['sender', 'receiver']);
 
-            // Événement de diffusion
-            broadcast(new MessageSent($message));
+            // ✅ 1. Broadcast the MessageSent event
+            broadcast(new MessageSent($message))->toOthers();
 
-            // Notification avec extrait du message
-            Notification::create([
+            // ✅ 2. Create notification
+            $notification = Notification::create([
                 'user_id' => $request->input('receiver_id'),
-                'title' => 'Nouveau message de ' . $user->first_name . ' ' . $user->last_name . ' : ' . Str::limit($content, 50),
-                'notification_type' => NotificationType::INFO,
+                'title' => 'Nouveau message',
+                'message' => $user->first_name . ' ' . $user->last_name . ' vous a envoyé un message',
+                'type' => 'message',
+                'data' => json_encode([
+                    'sender_id' => $user->id,
+                    'message_preview' => Str::limit($content, 50),
+                ]),
                 'status' => NotificationStatus::SENT,
             ]);
+
+            // ✅ 3. Broadcast the NotificationSent event
+            broadcast(new \App\Events\NotificationSent($notification))->toOthers();
 
             // TOUJOURS retourner JSON pour les requêtes AJAX
             if ($request->expectsJson() || $request->ajax()) {
@@ -131,6 +219,10 @@ class MessagerieController extends Controller
             return redirect()->route('messagerie.show', $request->input('receiver_id'))
                 ->with('success', 'Message sent successfully');
         } catch (\Exception $e) {
+            \Log::error('Error sending message: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
@@ -140,6 +232,8 @@ class MessagerieController extends Controller
             return back()->withErrors(['error' => 'Erreur lors de l\'envoi du message']);
         }
     }
+
+
 
     public function create()
     {
@@ -177,6 +271,7 @@ class MessagerieController extends Controller
 
         return response()->json(['count' => $count]);
     }
+
     public function typing(Request $request)
     {
         if (!Auth::check()) {

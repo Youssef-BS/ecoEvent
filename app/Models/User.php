@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -53,24 +53,72 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Relationships
+     */
     public function donations()
     {
         return $this->hasMany(Donation::class);
     }
+
     public function events()
     {
         return $this->hasMany(Event::class);
     }
+
     public function posts(): HasMany
     {
         return $this->hasMany(Post::class);
     }
 
-     public function participations() {
+    public function participations()
+    {
         return $this->belongsToMany(Event::class, 'participations');
     }
-    public function notifications() {
+
+    public function notifications()
+    {
         return $this->hasMany(Notification::class);
     }
-}
 
+    /**
+     * Profile Accessors
+     */
+
+    /**
+     * Get user initials for avatar
+     */
+    public function getInitialsAttribute(): string
+    {
+        $firstInitial = substr($this->first_name, 0, 1);
+        $lastInitial = substr($this->last_name, 0, 1);
+        return strtoupper($firstInitial . $lastInitial);
+    }
+
+    /**
+     * Check if user has a profile image
+     */
+    public function getHasProfileImageAttribute(): bool
+    {
+        return !empty($this->image) && Storage::disk('public')->exists($this->image);
+    }
+
+    /**
+     * Get the full URL for profile image
+     */
+    public function getProfileImageUrlAttribute(): ?string
+    {
+        if ($this->has_profile_image) {
+            return asset('storage/' . $this->image);
+        }
+        return null;
+    }
+
+    /**
+     * Get full name
+     */
+    public function getFullNameAttribute(): string
+    {
+        return $this->first_name . ' ' . $this->last_name;
+    }
+}
