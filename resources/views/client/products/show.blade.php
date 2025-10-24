@@ -46,7 +46,7 @@
             @if($product->images->count() > 0)
                 <!-- Main Image -->
                 <div class="mb-3 text-center">
-                    <img id="mainImage" src="{{ Storage::disk('public')->url($product->images->first()->path) }}" 
+                    <img id="mainImage" src="{{ Storage::url($product->images[0]->path) }}" 
                          alt="{{ $product->name }}" class="img-fluid rounded shadow-sm" 
                          style="max-height: 400px; width: 100%; object-fit: cover;">
                 </div>
@@ -56,11 +56,11 @@
                     <div class="row g-2 justify-content-center">
                         @foreach($product->images as $image)
                             <div class="col-auto">
-                                <img src="{{ Storage::disk('public')->url($image->path) }}"
+                                <img src="{{ Storage::url($image->path) }}"
                                      alt="{{ $product->name }}"
                                      class="img-thumbnail thumbnail-image cursor-pointer"
                                      style="width: 80px; height: 80px; object-fit: cover;"
-                                     onclick="changeMainImage('{{ Storage::disk('public')->url($image->path) }}')">
+                                     onclick="changeMainImage('{{ Storage::url($image->path) }}')">
                             </div>
                         @endforeach
                     </div>

@@ -30,4 +30,16 @@ class Product extends Model
     {
         return $this->hasMany(ProductImage::class);
     }
+
+    // Convert price to cents for Stripe
+    public function getPriceInCents(): int
+    {
+        return (int) ($this->price * 100);
+    }
+
+    // Check if product is available
+    public function isAvailable(): bool
+    {
+        return $this->quantity > 0;
+    }
 }

@@ -19,6 +19,7 @@ use App\Http\Controllers\MessagerieController;
 use App\Http\Controllers\NotificationController;
 
 use App\Http\Controllers\ParticipationController;
+use App\Http\Controllers\CheckoutController;
 
 use App\Http\Controllers\ResourceController;
 use App\Http\Controllers\SponsorMetricsController;
@@ -185,3 +186,11 @@ Route::prefix('/admin/users')->name('users.')->group(function () {
     Route::put('/{user}', [UserController::class, 'edit'])->name('edit');
     Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
 });
+
+
+
+Route::post('/events/{event}/products/{product}/checkout', [CheckoutController::class, 'createCheckoutSession'])
+     ->name('checkout.create');
+     
+Route::get('/events/{event}/products/{product}/checkout/success', [CheckoutController::class, 'success'])
+     ->name('checkout.success');

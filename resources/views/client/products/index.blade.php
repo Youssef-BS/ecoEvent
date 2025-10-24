@@ -1,4 +1,3 @@
-
 @include('client.layouts.navbar')
 <head>
     <meta charset="utf-8">
@@ -113,8 +112,8 @@
                                 
                                 <div class="card-body">
                                     <a href="{{ route('products.show', [$event, $product]) }}" class="text-decoration-none">
-    <h5 class="card-title">{{ $product->name }}</h5>
-</a>
+                                        <h5 class="card-title">{{ $product->name }}</h5>
+                                    </a>
                                     <p class="card-text text-muted small line-clamp-2" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                         {{ $product->description ?: 'No description available' }}
                                     </p>
@@ -124,6 +123,18 @@
                                             <span class="h5 text-primary mb-0">${{ number_format($product->price, 2) }}</span>
                                         </div>
                                         <div class="btn-group">
+                                            @if($product->isAvailable())
+                                                <form method="POST" action="{{ route('checkout.create', ['event' => $event->id, 'product' => $product->id]) }}">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-success btn-sm" data-bs-toggle="tooltip" title="Buy Now">
+                                                        <i class="bi bi-cart-plus"></i> Buy
+                                                    </button>
+                                                </form>
+                                            @else
+                                                <button class="btn btn-secondary btn-sm" disabled>
+                                                    <i class="bi bi-cart-x"></i> Out of Stock
+                                                </button>
+                                            @endif
                                             <a href="{{ route('products.edit', ['event' => $event->id, 'product' => $product->id]) }}" 
                                                class="btn btn-outline-primary btn-sm" 
                                                data-bs-toggle="tooltip" 
@@ -183,7 +194,6 @@
 </div>
 @include('client.layouts.footer')
 
-
 @push('styles')
 <style>
     .product-card {
@@ -219,12 +229,21 @@
         border-radius: 12px 12px 0 0;
         overflow: hidden;
     }
+    
+    /* Style for the form button to match other buttons */
+    .btn-group form {
+        display: inline-block;
+    }
 </style>
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-K6YShuO0pj+lY+z+U/+oD/y7TRsExSvHLkO/9xY3xHqPb+2Xikq0z+S+lfJ9zv2t" crossorigin="anonymous"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM loaded - initializing scripts');
+
         // Initialize Bootstrap tooltips
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
         var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
@@ -242,13 +261,8 @@
                 const productId = this.getAttribute('data-product-id');
                 const productName = this.getAttribute('data-product-name');
                 
-                // Set the product name in the modal
                 productNameElement.textContent = productName;
-                
-                // Set the form action - adjust this based on your actual delete route
-                deleteForm.action = `/admin/events/{{ $event->id }}/products/${productId}`;
-                
-                // Show the modal
+                deleteForm.action = `/events/{{ $event->id }}/products/${productId}`;
                 deleteModal.show();
             });
         });
